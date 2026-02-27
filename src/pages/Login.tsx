@@ -14,7 +14,7 @@ export default function Login() {
       if (!profile) {
         navigate("/selecionar-acesso", { replace: true });
       } else if (profile.status === "aprovado") {
-        navigate("/app/dashboard", { replace: true });
+        navigate("/app", { replace: true });
       } else if (profile.status === "pendente") {
         navigate("/aguardando-aprovacao", { replace: true });
       } else {

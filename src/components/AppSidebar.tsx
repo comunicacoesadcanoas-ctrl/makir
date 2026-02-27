@@ -1,17 +1,37 @@
-import { Users, BookOpen, BarChart3, MapPin, LayoutDashboard } from "lucide-react";
+import { Users, BookOpen, BarChart3, MapPin, LayoutDashboard, ShieldCheck } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
+import { usePermissions } from "@/hooks/usePermissions";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
-const navItems = [
+const allNavItems = [
   { title: "Dashboard", url: "/app/dashboard", icon: LayoutDashboard },
   { title: "Visitantes", url: "/app/visitantes", icon: Users },
   { title: "Discípulos", url: "/app/discipulos", icon: BookOpen },
   { title: "Relatórios", url: "/app/relatorios", icon: BarChart3 },
   { title: "Mapa de GCs", url: "/app/mapa-gcs", icon: MapPin },
+  { title: "Admin", url: "/app/admin", icon: ShieldCheck },
 ];
 
 export function AppSidebar() {
   const location = useLocation();
+  const { canViewRoute, isAdmin } = usePermissions();
+  const [pendingCount, setPendingCount] = useState(0);
+
+  const visibleItems = allNavItems.filter((item) => canViewRoute(item.url));
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    const fetchPending = async () => {
+      const { count } = await supabase
+        .from("users")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "pendente");
+      setPendingCount(count || 0);
+    };
+    fetchPending();
+  }, [isAdmin]);
 
   return (
     <aside className="hidden md:flex flex-col w-64 bg-primary min-h-screen">
@@ -21,8 +41,9 @@ export function AppSidebar() {
       </div>
 
       <nav className="flex-1 px-3 space-y-1">
-        {navItems.map((item) => {
+        {visibleItems.map((item) => {
           const isActive = location.pathname === item.url;
+          const showBadge = item.url === "/app/admin" && pendingCount > 0;
           return (
             <NavLink
               key={item.url}
@@ -35,7 +56,12 @@ export function AppSidebar() {
               activeClassName=""
             >
               <item.icon className="h-5 w-5" />
-              <span>{item.title}</span>
+              <span className="flex-1">{item.title}</span>
+              {showBadge && (
+                <span className="bg-destructive text-destructive-foreground text-xs font-bold rounded-full h-5 min-w-[20px] flex items-center justify-center px-1.5">
+                  {pendingCount}
+                </span>
+              )}
             </NavLink>
           );
         })}
@@ -50,11 +76,16 @@ export function AppSidebar() {
 
 export function BottomNav() {
   const location = useLocation();
+  const { canViewRoute } = usePermissions();
+
+  const visibleItems = allNavItems
+    .filter((item) => canViewRoute(item.url))
+    .filter((item) => item.url !== "/app/admin"); // admin only on sidebar
 
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-card border-t border-border z-50">
       <div className="flex justify-around items-center h-16">
-        {navItems.map((item) => {
+        {visibleItems.map((item) => {
           const isActive = location.pathname === item.url;
           return (
             <NavLink
@@ -76,5 +107,3 @@ export function BottomNav() {
     </nav>
   );
 }
-
-export { navItems };

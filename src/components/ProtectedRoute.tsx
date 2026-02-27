@@ -1,8 +1,11 @@
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePermissions } from "@/hooks/usePermissions";
 
 export default function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { session, profile, loading } = useAuth();
+  const { canViewRoute } = usePermissions();
+  const location = useLocation();
 
   if (loading) {
     return (
@@ -19,19 +22,22 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
     return <Navigate to="/login" replace />;
   }
 
-  // No profile yet → needs to select access type
   if (!profile) {
     return <Navigate to="/selecionar-acesso" replace />;
   }
 
-  // Pending approval
   if (profile.status === "pendente") {
     return <Navigate to="/aguardando-aprovacao" replace />;
   }
 
-  // Rejected
   if (profile.status === "rejeitado") {
     return <Navigate to="/acesso-negado" replace />;
+  }
+
+  // Check route-level permission (skip for /app itself since it redirects)
+  const currentPath = location.pathname;
+  if (currentPath !== "/app" && !canViewRoute(currentPath)) {
+    return <Navigate to="/app" replace />;
   }
 
   return <>{children}</>;
