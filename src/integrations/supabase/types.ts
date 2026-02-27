@@ -349,6 +349,42 @@ export type Database = {
           },
         ]
       }
+      solicitacoes_acesso: {
+        Row: {
+          acesso_atual: Database["public"]["Enums"]["tipo_acesso_enum"]
+          acesso_solicitado: Database["public"]["Enums"]["tipo_acesso_enum"]
+          avaliado_em: string | null
+          avaliado_por: string | null
+          criado_em: string
+          id: string
+          observacao: string | null
+          status: Database["public"]["Enums"]["status_solicitacao_enum"]
+          user_id: string
+        }
+        Insert: {
+          acesso_atual: Database["public"]["Enums"]["tipo_acesso_enum"]
+          acesso_solicitado: Database["public"]["Enums"]["tipo_acesso_enum"]
+          avaliado_em?: string | null
+          avaliado_por?: string | null
+          criado_em?: string
+          id?: string
+          observacao?: string | null
+          status?: Database["public"]["Enums"]["status_solicitacao_enum"]
+          user_id: string
+        }
+        Update: {
+          acesso_atual?: Database["public"]["Enums"]["tipo_acesso_enum"]
+          acesso_solicitado?: Database["public"]["Enums"]["tipo_acesso_enum"]
+          avaliado_em?: string | null
+          avaliado_por?: string | null
+          criado_em?: string
+          id?: string
+          observacao?: string | null
+          status?: Database["public"]["Enums"]["status_solicitacao_enum"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       users: {
         Row: {
           criado_em: string
@@ -461,6 +497,7 @@ export type Database = {
       status_enum: "pendente" | "aprovado" | "rejeitado"
       status_gc_enum: "ativo" | "em_formacao" | "inativo"
       status_sessao_enum: "presente" | "ausente" | "reagendado"
+      status_solicitacao_enum: "pendente" | "aprovado" | "rejeitado"
       tipo_acesso_enum: "recepcao" | "discipulador" | "rede"
     }
     CompositeTypes: {
@@ -595,6 +632,7 @@ export const Constants = {
       status_enum: ["pendente", "aprovado", "rejeitado"],
       status_gc_enum: ["ativo", "em_formacao", "inativo"],
       status_sessao_enum: ["presente", "ausente", "reagendado"],
+      status_solicitacao_enum: ["pendente", "aprovado", "rejeitado"],
       tipo_acesso_enum: ["recepcao", "discipulador", "rede"],
     },
   },
