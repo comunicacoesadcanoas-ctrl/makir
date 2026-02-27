@@ -83,7 +83,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         initialLoadDone.current = true;
         setLoading(false);
       }
-    }, 5000);
+    }, 2000);
 
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       setSession(session);
