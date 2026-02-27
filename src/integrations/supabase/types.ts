@@ -14,6 +14,82 @@ export type Database = {
   }
   public: {
     Tables: {
+      discipulos: {
+        Row: {
+          data_inicio: string
+          discipulador_id: string
+          discipulador_nome: string
+          id: string
+          licoes_concluidas: number
+          progresso_percentual: number
+          status_cor: Database["public"]["Enums"]["status_cor_enum"]
+          ultima_atividade: string | null
+          visitante_id: string
+        }
+        Insert: {
+          data_inicio?: string
+          discipulador_id: string
+          discipulador_nome: string
+          id?: string
+          licoes_concluidas?: number
+          progresso_percentual?: number
+          status_cor?: Database["public"]["Enums"]["status_cor_enum"]
+          ultima_atividade?: string | null
+          visitante_id: string
+        }
+        Update: {
+          data_inicio?: string
+          discipulador_id?: string
+          discipulador_nome?: string
+          id?: string
+          licoes_concluidas?: number
+          progresso_percentual?: number
+          status_cor?: Database["public"]["Enums"]["status_cor_enum"]
+          ultima_atividade?: string | null
+          visitante_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "discipulos_visitante_id_fkey"
+            columns: ["visitante_id"]
+            isOneToOne: true
+            referencedRelation: "visitantes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      licoes: {
+        Row: {
+          concluida: boolean
+          data_conclusao: string | null
+          discipulo_id: string
+          id: string
+          numero: number
+        }
+        Insert: {
+          concluida?: boolean
+          data_conclusao?: string | null
+          discipulo_id: string
+          id?: string
+          numero: number
+        }
+        Update: {
+          concluida?: boolean
+          data_conclusao?: string | null
+          discipulo_id?: string
+          id?: string
+          numero?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "licoes_discipulo_id_fkey"
+            columns: ["discipulo_id"]
+            isOneToOne: false
+            referencedRelation: "discipulos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       users: {
         Row: {
           criado_em: string
