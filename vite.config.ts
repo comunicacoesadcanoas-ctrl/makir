@@ -4,17 +4,22 @@ import path from "path";
 import { VitePWA } from "vite-plugin-pwa";
 
 // https://vitejs.dev/config/
-export default defineConfig(({ mode }) => ({
-  server: {
-    host: "::",
-    port: 8080,
-    hmr: {
-      overlay: false,
+export default defineConfig(async ({ mode }) => {
+  const tagger = mode === "development"
+    ? await import("lovable-tagger").then(m => m.componentTagger()).catch(() => null)
+    : null;
+
+  return {
+    server: {
+      host: "::",
+      port: 8080,
+      hmr: {
+        overlay: false,
+      },
     },
-  },
-  plugins: [
-    react(),
-    mode === "development" && componentTagger(),
+    plugins: [
+      react(),
+      tagger,
     VitePWA({
       registerType: "autoUpdate",
       workbox: {
@@ -53,4 +58,5 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
-}));
+};
+});
