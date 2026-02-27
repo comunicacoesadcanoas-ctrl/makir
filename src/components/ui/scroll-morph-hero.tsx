@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { motion, useSpring, useMotionValue } from "framer-motion";
+import logoDark from "@/assets/logo-makir.svg";
 
 // --- Types ---
 export type AnimationPhase = "scatter" | "line" | "circle" | "final";
@@ -295,13 +296,12 @@ export default function ScrollMorphHero({
           animate={{ opacity: introPhase === "circle" || introPhase === "final" ? 0 : 1 }}
           transition={{ duration: 1 }}
         >
-          <motion.h1
-            className="text-4xl md:text-6xl font-extrabold text-foreground tracking-tight"
+          <motion.div
             animate={{ opacity: introPhase === "scatter" ? 0 : 1, y: introPhase === "scatter" ? 20 : 0 }}
             transition={{ duration: 0.8 }}
           >
-            {title}
-          </motion.h1>
+            <img src={logoDark} alt={title} className="h-14 md:h-20" />
+          </motion.div>
           <motion.p
             className="text-xs md:text-sm text-muted-foreground mt-4 tracking-[0.3em] uppercase"
             animate={{ opacity: introPhase === "line" ? 1 : 0 }}
@@ -317,9 +317,7 @@ export default function ScrollMorphHero({
           animate={{ opacity: showContent ? 1 : 0, y: showContent ? 0 : 20 }}
           transition={{ duration: 0.8, delay: 0.2 }}
         >
-          <h2 className="text-2xl md:text-4xl font-extrabold text-foreground mb-4">
-            {contentTitle}
-          </h2>
+          <img src={logoDark} alt={contentTitle} className="h-12 md:h-16 mb-4" />
           <p className="text-sm md:text-base text-muted-foreground max-w-md text-center px-4">
             {contentDescription}
           </p>

@@ -3,6 +3,7 @@ import { LogOut } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { NotificacoesDropdown } from "@/components/NotificacoesDropdown";
+import logoDark from "@/assets/logo-makir.svg";
 
 export function AppHeader() {
   const { profile, user, signOut } = useAuth();
@@ -12,7 +13,7 @@ export function AppHeader() {
   return (
     <header className="h-16 border-b border-border bg-card flex items-center justify-between px-4 md:px-6">
       <div className="md:hidden">
-        <h1 className="text-lg font-extrabold text-foreground tracking-tight">MAKIR</h1>
+        <img src={logoDark} alt="Makir" className="h-7" />
       </div>
       <div className="hidden md:block" />
 
