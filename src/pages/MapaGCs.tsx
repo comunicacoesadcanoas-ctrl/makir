@@ -1,15 +1,19 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { usePermissions } from "@/hooks/usePermissions";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { MapPin, Plus, Users, Clock, Phone, Pencil, Trash2, Search } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { MapPin, Plus, Users, Clock, Phone, Pencil, Trash2, Search, Map, LayoutGrid } from "lucide-react";
 import { toast } from "sonner";
+import { GoogleMap, useJsApiLoader, Marker, InfoWindow } from "@react-google-maps/api";
+
+const GOOGLE_MAPS_KEY = "AIzaSyBsRrFlYOT5_NClqnQYnw1rv2Zr60slr9Q";
 
 type StatusGC = "ativo" | "em_formacao" | "inativo";
 
@@ -21,6 +25,8 @@ interface GC {
   endereco: string | null;
   bairro: string | null;
   zona: string | null;
+  latitude: number | null;
+  longitude: number | null;
   dia_encontro: string[];
   horario: string | null;
   capacidade: number;
@@ -46,6 +52,12 @@ const statusCorConfig: Record<string, { bg: string; ring: string }> = {
   vermelho: { bg: "bg-destructive", ring: "ring-destructive/30" },
 };
 
+const markerColors: Record<string, string> = {
+  verde: "#22c55e",
+  amarelo: "#eab308",
+  vermelho: "#ef4444",
+};
+
 const emptyForm = {
   nome: "",
   lider_nome: "",
@@ -63,6 +75,9 @@ const emptyForm = {
   data_inicio: new Date().toISOString().slice(0, 10),
 };
 
+const mapContainerStyle = { width: "100%", height: "500px", borderRadius: "0.5rem" };
+const defaultCenter = { lat: -29.9167, lng: -51.1833 }; // Canoas, RS
+
 export default function MapaGCs() {
   const { isAdmin } = usePermissions();
   const [gcs, setGcs] = useState<GC[]>([]);
@@ -72,6 +87,10 @@ export default function MapaGCs() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState({ ...emptyForm });
   const [saving, setSaving] = useState(false);
+  const [activeTab, setActiveTab] = useState("cards");
+  const [selectedMarker, setSelectedMarker] = useState<string | null>(null);
+
+  const { isLoaded } = useJsApiLoader({ googleMapsApiKey: GOOGLE_MAPS_KEY });
 
   const fetchGcs = useCallback(async () => {
     setLoading(true);
@@ -79,39 +98,24 @@ export default function MapaGCs() {
       .from("grupos_crescimento")
       .select("*")
       .order("nome");
-    if (error) {
-      toast.error("Erro ao carregar GCs");
-    } else {
-      setGcs((data as unknown as GC[]) || []);
-    }
+    if (error) toast.error("Erro ao carregar GCs");
+    else setGcs((data as unknown as GC[]) || []);
     setLoading(false);
   }, []);
 
   useEffect(() => { fetchGcs(); }, [fetchGcs]);
 
-  const openNew = () => {
-    setEditingId(null);
-    setForm({ ...emptyForm });
-    setShowForm(true);
-  };
+  const openNew = () => { setEditingId(null); setForm({ ...emptyForm }); setShowForm(true); };
 
   const openEdit = (gc: GC) => {
     setEditingId(gc.id);
     setForm({
-      nome: gc.nome,
-      lider_nome: gc.lider_nome,
-      lider_email: gc.lider_email || "",
-      endereco: gc.endereco || "",
-      bairro: gc.bairro || "",
-      zona: gc.zona || "",
-      dia_encontro: gc.dia_encontro || [],
-      horario: gc.horario || "",
-      capacidade: String(gc.capacidade),
-      total_membros: String(gc.total_membros),
-      telefone_contato: gc.telefone_contato || "",
-      status_gc: gc.status_gc,
-      observacoes: gc.observacoes || "",
-      data_inicio: gc.data_inicio || new Date().toISOString().slice(0, 10),
+      nome: gc.nome, lider_nome: gc.lider_nome, lider_email: gc.lider_email || "",
+      endereco: gc.endereco || "", bairro: gc.bairro || "", zona: gc.zona || "",
+      dia_encontro: gc.dia_encontro || [], horario: gc.horario || "",
+      capacidade: String(gc.capacidade), total_membros: String(gc.total_membros),
+      telefone_contato: gc.telefone_contato || "", status_gc: gc.status_gc,
+      observacoes: gc.observacoes || "", data_inicio: gc.data_inicio || new Date().toISOString().slice(0, 10),
     });
     setShowForm(true);
   };
@@ -138,6 +142,23 @@ export default function MapaGCs() {
     return "verde";
   };
 
+  // Geocode address using Google Geocoding API
+  const geocodeAddress = async (address: string): Promise<{ lat: number; lng: number } | null> => {
+    if (!address) return null;
+    try {
+      const res = await fetch(
+        `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${GOOGLE_MAPS_KEY}`
+      );
+      const data = await res.json();
+      if (data.results?.[0]) {
+        return data.results[0].geometry.location;
+      }
+    } catch (e) {
+      console.error("Geocoding error:", e);
+    }
+    return null;
+  };
+
   const handleSave = async () => {
     if (!form.nome.trim() || !form.lider_nome.trim()) {
       toast.error("Nome do GC e líder são obrigatórios.");
@@ -146,6 +167,16 @@ export default function MapaGCs() {
     setSaving(true);
     const total = parseInt(form.total_membros) || 0;
     const cap = parseInt(form.capacidade) || 20;
+
+    // Geocode the address
+    let lat: number | null = null;
+    let lng: number | null = null;
+    const fullAddress = [form.endereco, form.bairro, "Canoas, RS"].filter(Boolean).join(", ");
+    if (fullAddress) {
+      const coords = await geocodeAddress(fullAddress);
+      if (coords) { lat = coords.lat; lng = coords.lng; }
+    }
+
     const payload = {
       nome: form.nome.trim(),
       lider_nome: form.lider_nome.trim(),
@@ -153,6 +184,8 @@ export default function MapaGCs() {
       endereco: form.endereco.trim() || null,
       bairro: form.bairro.trim() || null,
       zona: form.zona.trim() || null,
+      latitude: lat,
+      longitude: lng,
       dia_encontro: form.dia_encontro,
       horario: form.horario.trim() || null,
       capacidade: cap,
@@ -170,13 +203,8 @@ export default function MapaGCs() {
     } else {
       ({ error } = await supabase.from("grupos_crescimento").insert(payload));
     }
-    if (error) {
-      toast.error("Erro ao salvar: " + error.message);
-    } else {
-      toast.success(editingId ? "GC atualizado!" : "GC cadastrado!");
-      setShowForm(false);
-      fetchGcs();
-    }
+    if (error) toast.error("Erro ao salvar: " + error.message);
+    else { toast.success(editingId ? "GC atualizado!" : "GC cadastrado!"); setShowForm(false); fetchGcs(); }
     setSaving(false);
   };
 
@@ -185,6 +213,15 @@ export default function MapaGCs() {
     g.lider_nome.toLowerCase().includes(search.toLowerCase()) ||
     (g.bairro || "").toLowerCase().includes(search.toLowerCase())
   );
+
+  const gcsWithCoords = useMemo(() => filtered.filter(g => g.latitude && g.longitude), [filtered]);
+
+  const mapCenter = useMemo(() => {
+    if (gcsWithCoords.length === 0) return defaultCenter;
+    const avgLat = gcsWithCoords.reduce((s, g) => s + g.latitude!, 0) / gcsWithCoords.length;
+    const avgLng = gcsWithCoords.reduce((s, g) => s + g.longitude!, 0) / gcsWithCoords.length;
+    return { lat: avgLat, lng: avgLng };
+  }, [gcsWithCoords]);
 
   return (
     <div className="space-y-4">
@@ -206,81 +243,156 @@ export default function MapaGCs() {
         <Input placeholder="Buscar por nome, líder ou bairro..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
       </div>
 
-      {/* LISTING */}
-      {loading ? (
-        <div className="flex justify-center py-12">
-          <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-        </div>
-      ) : filtered.length === 0 ? (
-        <Card className="border-border">
-          <CardContent className="py-12 text-center text-muted-foreground">
-            {search ? "Nenhum GC encontrado." : "Nenhum GC cadastrado ainda."}
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {filtered.map(gc => {
-            const scfg = statusGCConfig[gc.status_gc] || statusGCConfig.ativo;
-            const ccfg = statusCorConfig[gc.status_cor] || statusCorConfig.verde;
-            return (
-              <Card key={gc.id} className="border-border hover:border-primary/20 transition-colors">
-                <CardContent className="py-4 px-4 space-y-3">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <div className={`h-3 w-3 rounded-full shrink-0 ring-2 ${ccfg.bg} ${ccfg.ring}`} />
-                      <h3 className="font-semibold text-foreground truncate text-sm">{gc.nome}</h3>
-                    </div>
-                    <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium shrink-0 ${scfg.cor}`}>
-                      {scfg.label}
-                    </span>
-                  </div>
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList>
+          <TabsTrigger value="cards" className="gap-1.5"><LayoutGrid className="h-3.5 w-3.5" /> Cards</TabsTrigger>
+          <TabsTrigger value="mapa" className="gap-1.5"><Map className="h-3.5 w-3.5" /> Mapa</TabsTrigger>
+        </TabsList>
 
-                  <div className="space-y-1.5 text-xs text-muted-foreground">
-                    <div className="flex items-center gap-1.5">
-                      <Users className="h-3.5 w-3.5 shrink-0" />
-                      <span className="font-medium text-foreground">{gc.lider_nome}</span>
-                    </div>
-                    {gc.bairro && (
-                      <div className="flex items-center gap-1.5">
-                        <MapPin className="h-3.5 w-3.5 shrink-0" />
-                        <span>{gc.bairro}{gc.zona ? ` — ${gc.zona}` : ""}</span>
+        {/* CARDS TAB */}
+        <TabsContent value="cards" className="mt-3">
+          {loading ? (
+            <div className="flex justify-center py-12">
+              <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+            </div>
+          ) : filtered.length === 0 ? (
+            <Card className="border-border">
+              <CardContent className="py-12 text-center text-muted-foreground">
+                {search ? "Nenhum GC encontrado." : "Nenhum GC cadastrado ainda."}
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {filtered.map(gc => {
+                const scfg = statusGCConfig[gc.status_gc] || statusGCConfig.ativo;
+                const ccfg = statusCorConfig[gc.status_cor] || statusCorConfig.verde;
+                return (
+                  <Card key={gc.id} className="border-border hover:border-primary/20 transition-colors">
+                    <CardContent className="py-4 px-4 space-y-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <div className={`h-3 w-3 rounded-full shrink-0 ring-2 ${ccfg.bg} ${ccfg.ring}`} />
+                          <h3 className="font-semibold text-foreground truncate text-sm">{gc.nome}</h3>
+                        </div>
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium shrink-0 ${scfg.cor}`}>
+                          {scfg.label}
+                        </span>
                       </div>
-                    )}
-                    {gc.dia_encontro?.length > 0 && (
-                      <div className="flex items-center gap-1.5">
-                        <Clock className="h-3.5 w-3.5 shrink-0" />
-                        <span>{gc.dia_encontro.join(", ")}{gc.horario ? ` às ${gc.horario}` : ""}</span>
+                      <div className="space-y-1.5 text-xs text-muted-foreground">
+                        <div className="flex items-center gap-1.5">
+                          <Users className="h-3.5 w-3.5 shrink-0" />
+                          <span className="font-medium text-foreground">{gc.lider_nome}</span>
+                        </div>
+                        {gc.bairro && (
+                          <div className="flex items-center gap-1.5">
+                            <MapPin className="h-3.5 w-3.5 shrink-0" />
+                            <span>{gc.bairro}{gc.zona ? ` — ${gc.zona}` : ""}</span>
+                          </div>
+                        )}
+                        {gc.dia_encontro?.length > 0 && (
+                          <div className="flex items-center gap-1.5">
+                            <Clock className="h-3.5 w-3.5 shrink-0" />
+                            <span>{gc.dia_encontro.join(", ")}{gc.horario ? ` às ${gc.horario}` : ""}</span>
+                          </div>
+                        )}
+                        {gc.telefone_contato && (
+                          <div className="flex items-center gap-1.5">
+                            <Phone className="h-3.5 w-3.5 shrink-0" />
+                            <span>{gc.telefone_contato}</span>
+                          </div>
+                        )}
                       </div>
-                    )}
-                    {gc.telefone_contato && (
-                      <div className="flex items-center gap-1.5">
-                        <Phone className="h-3.5 w-3.5 shrink-0" />
-                        <span>{gc.telefone_contato}</span>
+                      <div className="flex items-center justify-between">
+                        <Badge variant="outline" className="text-[10px]">
+                          {gc.total_membros}/{gc.capacidade} membros
+                        </Badge>
+                        <div className="flex gap-1">
+                          {gc.latitude && gc.longitude && (
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setActiveTab("mapa"); setSelectedMarker(gc.id); }}>
+                              <Map className="h-3.5 w-3.5" />
+                            </Button>
+                          )}
+                          {isAdmin && (
+                            <>
+                              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(gc)}>
+                                <Pencil className="h-3.5 w-3.5" />
+                              </Button>
+                              <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDelete(gc.id)}>
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            </>
+                          )}
+                        </div>
                       </div>
-                    )}
-                  </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+        </TabsContent>
 
-                  <div className="flex items-center justify-between">
-                    <Badge variant="outline" className="text-[10px]">
-                      {gc.total_membros}/{gc.capacidade} membros
-                    </Badge>
-                    {isAdmin && (
-                      <div className="flex gap-1">
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(gc)}>
-                          <Pencil className="h-3.5 w-3.5" />
-                        </Button>
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDelete(gc.id)}>
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
+        {/* MAP TAB */}
+        <TabsContent value="mapa" className="mt-3">
+          {!isLoaded ? (
+            <div className="flex justify-center py-12">
+              <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+            </div>
+          ) : gcsWithCoords.length === 0 ? (
+            <Card className="border-border">
+              <CardContent className="py-12 text-center text-muted-foreground">
+                Nenhum GC com localização cadastrada. Preencha o endereço ao cadastrar um GC para exibi-lo no mapa.
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="rounded-lg overflow-hidden border border-border">
+              <GoogleMap mapContainerStyle={mapContainerStyle} center={mapCenter} zoom={13}>
+                {gcsWithCoords.map(gc => (
+                  <Marker
+                    key={gc.id}
+                    position={{ lat: gc.latitude!, lng: gc.longitude! }}
+                    icon={{
+                      path: google.maps.SymbolPath.CIRCLE,
+                      scale: 12,
+                      fillColor: markerColors[gc.status_cor] || markerColors.verde,
+                      fillOpacity: 1,
+                      strokeWeight: 2,
+                      strokeColor: "#ffffff",
+                    }}
+                    onClick={() => setSelectedMarker(gc.id)}
+                  />
+                ))}
+                {selectedMarker && (() => {
+                  const gc = gcsWithCoords.find(g => g.id === selectedMarker);
+                  if (!gc) return null;
+                  const scfg = statusGCConfig[gc.status_gc] || statusGCConfig.ativo;
+                  return (
+                    <InfoWindow
+                      position={{ lat: gc.latitude!, lng: gc.longitude! }}
+                      onCloseClick={() => setSelectedMarker(null)}
+                    >
+                      <div style={{ minWidth: 180, fontFamily: "Inter, sans-serif" }}>
+                        <h3 style={{ fontWeight: 600, fontSize: 14, marginBottom: 4 }}>{gc.nome}</h3>
+                        <p style={{ fontSize: 12, color: "#666", margin: "2px 0" }}>👤 {gc.lider_nome}</p>
+                        <p style={{ fontSize: 12, color: "#666", margin: "2px 0" }}>👥 {gc.total_membros}/{gc.capacidade} membros</p>
+                        {gc.dia_encontro?.length > 0 && (
+                          <p style={{ fontSize: 12, color: "#666", margin: "2px 0" }}>📅 {gc.dia_encontro.join(", ")}{gc.horario ? ` às ${gc.horario}` : ""}</p>
+                        )}
+                        {gc.bairro && <p style={{ fontSize: 12, color: "#666", margin: "2px 0" }}>📍 {gc.bairro}</p>}
+                        <span style={{
+                          display: "inline-block", marginTop: 4, fontSize: 10, padding: "2px 6px",
+                          borderRadius: 4, backgroundColor: gc.status_cor === "verde" ? "#22c55e" : gc.status_cor === "amarelo" ? "#eab308" : "#ef4444",
+                          color: "white", fontWeight: 600
+                        }}>{scfg.label}</span>
                       </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-      )}
+                    </InfoWindow>
+                  );
+                })()}
+              </GoogleMap>
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
 
       {/* FORM DIALOG */}
       <Dialog open={showForm} onOpenChange={setShowForm}>
@@ -303,7 +415,7 @@ export default function MapaGCs() {
                 <Input type="email" value={form.lider_email} onChange={e => setForm(f => ({ ...f, lider_email: e.target.value }))} />
               </div>
               <div className="space-y-1 sm:col-span-2">
-                <label className="text-sm font-medium text-foreground">Endereço</label>
+                <label className="text-sm font-medium text-foreground">Endereço (usado para o mapa)</label>
                 <Input value={form.endereco} onChange={e => setForm(f => ({ ...f, endereco: e.target.value }))} placeholder="Rua, número..." />
               </div>
               <div className="space-y-1">
@@ -316,21 +428,13 @@ export default function MapaGCs() {
               </div>
             </div>
 
-            {/* Dias da semana */}
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-foreground">Dia(s) do encontro</label>
               <div className="flex flex-wrap gap-1.5">
                 {diasSemana.map(dia => (
-                  <button
-                    key={dia}
-                    type="button"
-                    onClick={() => toggleDia(dia)}
+                  <button key={dia} type="button" onClick={() => toggleDia(dia)}
                     className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all border
-                      ${form.dia_encontro.includes(dia)
-                        ? "bg-primary text-primary-foreground border-primary"
-                        : "bg-card text-muted-foreground border-border hover:border-primary/30"
-                      }`}
-                  >
+                      ${form.dia_encontro.includes(dia) ? "bg-primary text-primary-foreground border-primary" : "bg-card text-muted-foreground border-border hover:border-primary/30"}`}>
                     {dia}
                   </button>
                 ))}
