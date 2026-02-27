@@ -16,9 +16,9 @@ export default function DotGridBackground({ className = "", children }: DotGridB
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    const GAP = 18;
+    const GAP = 22;
     const DOT_RADIUS = 1.2;
-    const GLOW_RADIUS = 180;
+    const GLOW_RADIUS = 170;
 
     const resize = () => {
       const dpr = window.devicePixelRatio || 1;
