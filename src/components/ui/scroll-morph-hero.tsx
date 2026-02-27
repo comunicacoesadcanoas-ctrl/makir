@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useMemo, useRef } from "react";
-import { motion, useTransform, useSpring, useMotionValue } from "framer-motion";
+import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import { motion, useSpring, useMotionValue } from "framer-motion";
 
 // --- Types ---
-export type AnimationPhase = "scatter" | "line" | "circle" | "bottom-strip";
+export type AnimationPhase = "scatter" | "line" | "circle" | "final";
 
 interface FlipCardProps {
   src: string;
@@ -46,20 +46,12 @@ function FlipCard({ src, index, total, phase, target }: FlipCardProps) {
         whileHover={{ rotateY: 180 }}
         transition={{ duration: 0.6 }}
       >
-        {/* Front Face */}
         <div
           className="absolute inset-0 rounded-lg overflow-hidden shadow-lg"
           style={{ backfaceVisibility: "hidden" }}
         >
-          <img
-            src={src}
-            alt={`hero-${index}`}
-            className="w-full h-full object-cover"
-            loading="lazy"
-          />
+          <img src={src} alt={`hero-${index}`} className="w-full h-full object-cover" loading="lazy" />
         </div>
-
-        {/* Back Face */}
         <div
           className="absolute inset-0 rounded-lg overflow-hidden shadow-lg bg-primary flex items-center justify-center"
           style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}
@@ -74,9 +66,92 @@ function FlipCard({ src, index, total, phase, target }: FlipCardProps) {
   );
 }
 
+// --- Dot Grid Canvas ---
+function DotGridCanvas() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const mouseRef = useRef({ x: -1000, y: -1000 });
+  const animFrameRef = useRef<number>(0);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const GAP = 28;
+    const DOT_RADIUS = 1;
+    const GLOW_RADIUS = 150;
+
+    const resize = () => {
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = canvas.offsetWidth * dpr;
+      canvas.height = canvas.offsetHeight * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    };
+
+    const draw = () => {
+      const w = canvas.offsetWidth;
+      const h = canvas.offsetHeight;
+      ctx.clearRect(0, 0, w, h);
+      const mx = mouseRef.current.x;
+      const my = mouseRef.current.y;
+      const cols = Math.ceil(w / GAP) + 1;
+      const rows = Math.ceil(h / GAP) + 1;
+
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const x = c * GAP;
+          const y = r * GAP;
+          const dx = x - mx;
+          const dy = y - my;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          const t = Math.max(0, 1 - dist / GLOW_RADIUS);
+          const alpha = 0.15 + t * 0.7;
+          const radius = DOT_RADIUS + t * 1.5;
+
+          if (t > 0.01) {
+            ctx.beginPath();
+            ctx.arc(x, y, radius, 0, Math.PI * 2);
+            ctx.fillStyle = `hsla(80, 65%, 55%, ${alpha})`;
+            ctx.fill();
+          } else {
+            ctx.beginPath();
+            ctx.arc(x, y, DOT_RADIUS, 0, Math.PI * 2);
+            ctx.fillStyle = `hsla(0, 0%, 45%, 0.15)`;
+            ctx.fill();
+          }
+        }
+      }
+      animFrameRef.current = requestAnimationFrame(draw);
+    };
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const rect = canvas.getBoundingClientRect();
+      mouseRef.current = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    };
+    const handleMouseLeave = () => {
+      mouseRef.current = { x: -1000, y: -1000 };
+    };
+
+    resize();
+    window.addEventListener("resize", resize);
+    canvas.addEventListener("mousemove", handleMouseMove);
+    canvas.addEventListener("mouseleave", handleMouseLeave);
+    animFrameRef.current = requestAnimationFrame(draw);
+
+    return () => {
+      window.removeEventListener("resize", resize);
+      canvas.removeEventListener("mousemove", handleMouseMove);
+      canvas.removeEventListener("mouseleave", handleMouseLeave);
+      cancelAnimationFrame(animFrameRef.current);
+    };
+  }, []);
+
+  return <canvas ref={canvasRef} className="absolute inset-0 w-full h-full z-[1]" />;
+}
+
 // --- Main Hero Component ---
 const TOTAL_IMAGES = 20;
-const MAX_SCROLL = 3000;
 
 const IMAGES = [
   "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=300&q=80",
@@ -121,71 +196,55 @@ export default function ScrollMorphHero({
   skipAnimation = false,
 }: ScrollMorphHeroProps) {
   const [introPhase, setIntroPhase] = useState<AnimationPhase>("scatter");
+  const [autoProgress, setAutoProgress] = useState(0); // 0 to 1
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
+  const autoAnimRef = useRef<number>(0);
 
   useEffect(() => {
     if (!containerRef.current) return;
-    const handleResize = (entries: ResizeObserverEntry[]) => {
+    const observer = new ResizeObserver((entries) => {
       for (const entry of entries) {
-        setContainerSize({
-          width: entry.contentRect.width,
-          height: entry.contentRect.height,
-        });
+        setContainerSize({ width: entry.contentRect.width, height: entry.contentRect.height });
       }
-    };
-    const observer = new ResizeObserver(handleResize);
-    observer.observe(containerRef.current);
-    setContainerSize({
-      width: containerRef.current.offsetWidth,
-      height: containerRef.current.offsetHeight,
     });
+    observer.observe(containerRef.current);
+    setContainerSize({ width: containerRef.current.offsetWidth, height: containerRef.current.offsetHeight });
     return () => observer.disconnect();
   }, []);
 
-  const virtualScroll = useMotionValue(0);
-  const scrollRef = useRef(0);
-
+  // Phase timeline: scatter(0-0.5s) → line(0.5-2.5s) → circle(2.5-6.5s) → auto-morph to final
   useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    const handleWheel = (e: WheelEvent) => {
-      e.preventDefault();
-      const newScroll = Math.min(Math.max(scrollRef.current + e.deltaY, 0), MAX_SCROLL);
-      scrollRef.current = newScroll;
-      virtualScroll.set(newScroll);
-    };
-
-    let touchStartY = 0;
-    const handleTouchStart = (e: TouchEvent) => {
-      touchStartY = e.touches[0].clientY;
-    };
-    const handleTouchMove = (e: TouchEvent) => {
-      const touchY = e.touches[0].clientY;
-      const deltaY = touchStartY - touchY;
-      touchStartY = touchY;
-      const newScroll = Math.min(Math.max(scrollRef.current + deltaY, 0), MAX_SCROLL);
-      scrollRef.current = newScroll;
-      virtualScroll.set(newScroll);
-    };
-
-    container.addEventListener("wheel", handleWheel, { passive: false });
-    container.addEventListener("touchstart", handleTouchStart, { passive: false });
-    container.addEventListener("touchmove", handleTouchMove, { passive: false });
+    if (skipAnimation) {
+      setIntroPhase("final");
+      setAutoProgress(1);
+      return;
+    }
+    const t1 = setTimeout(() => setIntroPhase("line"), 500);
+    const t2 = setTimeout(() => setIntroPhase("circle"), 2500);
+    const t3 = setTimeout(() => {
+      setIntroPhase("final");
+      // Animate autoProgress from 0 to 1 over ~2s
+      const start = performance.now();
+      const duration = 2000;
+      const animate = (now: number) => {
+        const elapsed = now - start;
+        const t = Math.min(elapsed / duration, 1);
+        // Ease out cubic
+        const eased = 1 - Math.pow(1 - t, 3);
+        setAutoProgress(eased);
+        if (t < 1) autoAnimRef.current = requestAnimationFrame(animate);
+      };
+      autoAnimRef.current = requestAnimationFrame(animate);
+    }, 6500); // 4s after circle forms at 2.5s
 
     return () => {
-      container.removeEventListener("wheel", handleWheel);
-      container.removeEventListener("touchstart", handleTouchStart);
-      container.removeEventListener("touchmove", handleTouchMove);
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+      cancelAnimationFrame(autoAnimRef.current);
     };
-  }, [virtualScroll]);
-
-  const morphProgress = useTransform(virtualScroll, [0, 600], [0, 1]);
-  const smoothMorph = useSpring(morphProgress, { stiffness: 40, damping: 20 });
-
-  const scrollRotate = useTransform(virtualScroll, [600, 3000], [0, 360]);
-  const smoothScrollRotate = useSpring(scrollRotate, { stiffness: 40, damping: 20 });
+  }, [skipAnimation]);
 
   const mouseX = useMotionValue(0);
   const smoothMouseX = useSpring(mouseX, { stiffness: 30, damping: 20 });
@@ -195,26 +254,12 @@ export default function ScrollMorphHero({
     if (!container) return;
     const handleMouseMove = (e: MouseEvent) => {
       const rect = container.getBoundingClientRect();
-      const relativeX = e.clientX - rect.left;
-      const normalizedX = (relativeX / rect.width) * 2 - 1;
+      const normalizedX = ((e.clientX - rect.left) / rect.width) * 2 - 1;
       mouseX.set(normalizedX * 100);
     };
     container.addEventListener("mousemove", handleMouseMove);
     return () => container.removeEventListener("mousemove", handleMouseMove);
   }, [mouseX]);
-
-  useEffect(() => {
-    if (skipAnimation) {
-      setIntroPhase("circle");
-      return;
-    }
-    const timer1 = setTimeout(() => setIntroPhase("line"), 500);
-    const timer2 = setTimeout(() => setIntroPhase("circle"), 2500);
-    return () => {
-      clearTimeout(timer1);
-      clearTimeout(timer2);
-    };
-  }, [skipAnimation]);
 
   const scatterPositions = useMemo(() => {
     return IMAGES.map(() => ({
@@ -226,46 +271,39 @@ export default function ScrollMorphHero({
     }));
   }, []);
 
-  const [morphValue, setMorphValue] = useState(0);
-  const [rotateValue, setRotateValue] = useState(0);
   const [parallaxValue, setParallaxValue] = useState(0);
-
   useEffect(() => {
-    const unsubscribeMorph = smoothMorph.on("change", setMorphValue);
-    const unsubscribeRotate = smoothScrollRotate.on("change", setRotateValue);
-    const unsubscribeParallax = smoothMouseX.on("change", setParallaxValue);
-    return () => {
-      unsubscribeMorph();
-      unsubscribeRotate();
-      unsubscribeParallax();
-    };
-  }, [smoothMorph, smoothScrollRotate, smoothMouseX]);
+    const unsub = smoothMouseX.on("change", setParallaxValue);
+    return unsub;
+  }, [smoothMouseX]);
 
-  const contentOpacity = useTransform(smoothMorph, [0.8, 1], [0, 1]);
-  const contentY = useTransform(smoothMorph, [0.8, 1], [20, 0]);
+  const showContent = introPhase === "final";
 
   return (
     <div className="relative w-full h-screen overflow-hidden bg-primary">
+      {/* Dot grid background */}
+      <DotGridCanvas />
+
       <div
         ref={containerRef}
-        className="relative w-full h-full overflow-hidden"
+        className="relative w-full h-full overflow-hidden z-[2]"
         style={{ touchAction: "none" }}
       >
         {/* Intro Text */}
         <motion.div
           className="absolute inset-0 flex flex-col items-center justify-center z-10 pointer-events-none"
-          animate={{ opacity: introPhase === "circle" ? 0 : 1 }}
+          animate={{ opacity: introPhase === "circle" || introPhase === "final" ? 0 : 1 }}
           transition={{ duration: 1 }}
         >
           <motion.h1
-            className="text-4xl md:text-6xl font-bold text-primary-foreground tracking-tight"
+            className="text-4xl md:text-6xl font-extrabold text-primary-foreground tracking-tight"
             animate={{ opacity: introPhase === "scatter" ? 0 : 1, y: introPhase === "scatter" ? 20 : 0 }}
             transition={{ duration: 0.8 }}
           >
             {title}
           </motion.h1>
           <motion.p
-            className="text-xs md:text-sm text-primary-foreground/60 mt-4 tracking-[0.3em] uppercase"
+            className="text-xs md:text-sm text-primary-foreground/50 mt-4 tracking-[0.3em] uppercase"
             animate={{ opacity: introPhase === "line" ? 1 : 0 }}
             transition={{ duration: 0.5, delay: 0.3 }}
           >
@@ -273,15 +311,16 @@ export default function ScrollMorphHero({
           </motion.p>
         </motion.div>
 
-        {/* Content (fades in on arc) */}
+        {/* Content (fades in during final phase) */}
         <motion.div
           className="absolute inset-0 flex flex-col items-center justify-start pt-[15%] z-10 pointer-events-none"
-          style={{ opacity: contentOpacity, y: contentY }}
+          animate={{ opacity: showContent ? 1 : 0, y: showContent ? 0 : 20 }}
+          transition={{ duration: 0.8, delay: 0.2 }}
         >
-          <h2 className="text-2xl md:text-4xl font-bold text-primary-foreground mb-4">
+          <h2 className="text-2xl md:text-4xl font-extrabold text-primary-foreground mb-4">
             {contentTitle}
           </h2>
-          <p className="text-sm md:text-base text-primary-foreground/70 max-w-md text-center px-4">
+          <p className="text-sm md:text-base text-primary-foreground/50 max-w-md text-center px-4">
             {contentDescription}
           </p>
           {children && (
@@ -304,6 +343,7 @@ export default function ScrollMorphHero({
               const lineX = i * lineSpacing - lineTotalWidth / 2;
               target = { x: lineX, y: 0, rotation: 0, scale: 1, opacity: 1 };
             } else {
+              // circle → final (auto morph)
               const isMobile = containerSize.width < 768;
               const minDimension = Math.min(containerSize.width, containerSize.height);
 
@@ -324,12 +364,7 @@ export default function ScrollMorphHero({
               const spreadAngle = isMobile ? 100 : 130;
               const startAngle = -90 - spreadAngle / 2;
               const step = spreadAngle / (TOTAL_IMAGES - 1);
-
-              const scrollProgress = Math.min(Math.max(rotateValue / 360, 0), 1);
-              const maxRotation = spreadAngle * 0.8;
-              const boundedRotation = -scrollProgress * maxRotation;
-
-              const currentArcAngle = startAngle + i * step + boundedRotation;
+              const currentArcAngle = startAngle + i * step;
               const arcRad = (currentArcAngle * Math.PI) / 180;
 
               const arcPos = {
@@ -340,23 +375,16 @@ export default function ScrollMorphHero({
               };
 
               target = {
-                x: lerp(circlePos.x, arcPos.x, morphValue),
-                y: lerp(circlePos.y, arcPos.y, morphValue),
-                rotation: lerp(circlePos.rotation, arcPos.rotation, morphValue),
-                scale: lerp(1, arcPos.scale, morphValue),
+                x: lerp(circlePos.x, arcPos.x, autoProgress),
+                y: lerp(circlePos.y, arcPos.y, autoProgress),
+                rotation: lerp(circlePos.rotation, arcPos.rotation, autoProgress),
+                scale: lerp(1, arcPos.scale, autoProgress),
                 opacity: 1,
               };
             }
 
             return (
-              <FlipCard
-                key={i}
-                src={src}
-                index={i}
-                total={TOTAL_IMAGES}
-                phase={introPhase}
-                target={target}
-              />
+              <FlipCard key={i} src={src} index={i} total={TOTAL_IMAGES} phase={introPhase} target={target} />
             );
           })}
         </div>
