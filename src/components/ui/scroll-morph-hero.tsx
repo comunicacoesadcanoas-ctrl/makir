@@ -109,6 +109,7 @@ interface ScrollMorphHeroProps {
   contentTitle?: string;
   contentDescription?: string;
   children?: React.ReactNode;
+  skipAnimation?: boolean;
 }
 
 export default function ScrollMorphHero({
@@ -117,6 +118,7 @@ export default function ScrollMorphHero({
   contentTitle = "CRM Eclesiástico",
   contentDescription = "Gerencie visitantes, discipulado e grupos de crescimento de forma simples e eficiente.",
   children,
+  skipAnimation = false,
 }: ScrollMorphHeroProps) {
   const [introPhase, setIntroPhase] = useState<AnimationPhase>("scatter");
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
@@ -202,13 +204,17 @@ export default function ScrollMorphHero({
   }, [mouseX]);
 
   useEffect(() => {
+    if (skipAnimation) {
+      setIntroPhase("circle");
+      return;
+    }
     const timer1 = setTimeout(() => setIntroPhase("line"), 500);
     const timer2 = setTimeout(() => setIntroPhase("circle"), 2500);
     return () => {
       clearTimeout(timer1);
       clearTimeout(timer2);
     };
-  }, []);
+  }, [skipAnimation]);
 
   const scatterPositions = useMemo(() => {
     return IMAGES.map(() => ({
