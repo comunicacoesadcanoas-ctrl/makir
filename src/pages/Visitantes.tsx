@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Users, Plus, Search, Pencil, Trash2, HeartHandshake } from "lucide-react";
+import { Users, Plus, Search, Pencil, Trash2, HeartHandshake, Download } from "lucide-react";
+import { ExportDialog } from "@/components/ExportDialog";
 import { toast } from "sonner";
 import { VisitanteFormDialog } from "@/components/VisitanteFormDialog";
 import { AssumirDiscipuladoDialog } from "@/components/AssumirDiscipuladoDialog";
@@ -37,6 +38,7 @@ export default function Visitantes() {
   const [editingVisitante, setEditingVisitante] = useState<Visitante | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Visitante | null>(null);
   const [assumirTarget, setAssumirTarget] = useState<Visitante | null>(null);
+  const [exportOpen, setExportOpen] = useState(false);
 
   const fetchVisitantes = useCallback(async () => {
     setLoading(true);
@@ -81,11 +83,16 @@ export default function Visitantes() {
           <h1 className="text-2xl font-bold text-foreground">Visitantes</h1>
           <Badge variant="secondary" className="text-xs">{visitantes.length}</Badge>
         </div>
-        {canEdit && (
-          <Button onClick={() => { setEditingVisitante(null); setFormOpen(true); }} className="gap-2">
-            <Plus className="h-4 w-4" /> Novo Visitante
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => setExportOpen(true)} className="gap-1.5">
+            <Download className="h-4 w-4" /> Exportar
           </Button>
-        )}
+          {canEdit && (
+            <Button onClick={() => { setEditingVisitante(null); setFormOpen(true); }} className="gap-2">
+              <Plus className="h-4 w-4" /> Novo Visitante
+            </Button>
+          )}
+        </div>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3">
@@ -177,6 +184,34 @@ export default function Visitantes() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <ExportDialog
+        open={exportOpen}
+        onOpenChange={setExportOpen}
+        tipo="visitantes"
+        data={visitantes}
+        sheetName="Visitantes"
+        showStatusFilter
+        filterFn={(row, f) => {
+          if (f.status !== "all" && row.status_cor !== f.status) return false;
+          if (f.start && row.criado_em < f.start) return false;
+          if (f.end && row.criado_em > f.end + "T23:59:59") return false;
+          return true;
+        }}
+        transformFn={(v) => ({
+          Nome: v.nome,
+          Cidade: v.cidade || "",
+          Telefone: v.telefone,
+          Sexo: v.sexo || "",
+          "Estado Civil": v.estado_civil || "",
+          "Aceitou Jesus": v.aceitou_jesus ? "Sim" : "Não",
+          "Frequenta Igreja": v.frequenta_igreja ? "Sim" : "Não",
+          "Quer GC": v.quer_gc ? "Sim" : "Não",
+          Status: v.status_cor,
+          "Data Cadastro": new Date(v.criado_em).toLocaleDateString("pt-BR"),
+          "Cadastrado Por": v.cadastrado_por_nome,
+        })}
+      />
     </div>
   );
 }
