@@ -11,6 +11,7 @@ const routePermissions: Record<string, TipoAcesso[]> = {
   "/app/relatorios": ["discipulador", "rede"],
   "/app/mapa-gcs": ["discipulador", "rede"],
   "/app/admin": ["rede"],
+  "/app/configuracoes": ["rede"],
 };
 
 // Edit permissions (recepcao can edit visitantes, discipulador can only read visitantes)
@@ -21,6 +22,7 @@ const editPermissions: Record<string, TipoAcesso[]> = {
   "/app/mapa-gcs": ["rede"],
   "/app/admin": ["rede"],
   "/app/dashboard": ["rede"],
+  "/app/configuracoes": ["rede"],
 };
 
 export function usePermissions() {
