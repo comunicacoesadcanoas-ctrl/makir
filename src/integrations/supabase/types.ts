@@ -44,14 +44,84 @@ export type Database = {
         }
         Relationships: []
       }
+      visitantes: {
+        Row: {
+          aceitou_jesus: boolean
+          ano: string | null
+          assumido_por: string | null
+          cadastrado_por: string
+          cadastrado_por_nome: string
+          cidade: string | null
+          criado_em: string
+          endereco: string | null
+          estado_civil: Database["public"]["Enums"]["estado_civil_enum"] | null
+          frequenta_igreja: boolean
+          id: string
+          nome: string
+          observacoes: string | null
+          quer_discipulado: boolean
+          quer_gc: boolean
+          sexo: Database["public"]["Enums"]["sexo_enum"] | null
+          status_cor: Database["public"]["Enums"]["status_cor_enum"]
+          telefone: string
+        }
+        Insert: {
+          aceitou_jesus?: boolean
+          ano?: string | null
+          assumido_por?: string | null
+          cadastrado_por: string
+          cadastrado_por_nome: string
+          cidade?: string | null
+          criado_em?: string
+          endereco?: string | null
+          estado_civil?: Database["public"]["Enums"]["estado_civil_enum"] | null
+          frequenta_igreja?: boolean
+          id?: string
+          nome: string
+          observacoes?: string | null
+          quer_discipulado?: boolean
+          quer_gc?: boolean
+          sexo?: Database["public"]["Enums"]["sexo_enum"] | null
+          status_cor?: Database["public"]["Enums"]["status_cor_enum"]
+          telefone: string
+        }
+        Update: {
+          aceitou_jesus?: boolean
+          ano?: string | null
+          assumido_por?: string | null
+          cadastrado_por?: string
+          cadastrado_por_nome?: string
+          cidade?: string | null
+          criado_em?: string
+          endereco?: string | null
+          estado_civil?: Database["public"]["Enums"]["estado_civil_enum"] | null
+          frequenta_igreja?: boolean
+          id?: string
+          nome?: string
+          observacoes?: string | null
+          quer_discipulado?: boolean
+          quer_gc?: boolean
+          sexo?: Database["public"]["Enums"]["sexo_enum"] | null
+          status_cor?: Database["public"]["Enums"]["status_cor_enum"]
+          telefone?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      get_user_tipo_acesso: {
+        Args: never
+        Returns: Database["public"]["Enums"]["tipo_acesso_enum"]
+      }
       is_admin: { Args: never; Returns: boolean }
     }
     Enums: {
+      estado_civil_enum: "solteiro" | "casado" | "divorciado"
+      sexo_enum: "masculino" | "feminino"
+      status_cor_enum: "vermelho" | "amarelo" | "verde"
       status_enum: "pendente" | "aprovado" | "rejeitado"
       tipo_acesso_enum: "recepcao" | "discipulador" | "rede"
     }
@@ -181,6 +251,9 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      estado_civil_enum: ["solteiro", "casado", "divorciado"],
+      sexo_enum: ["masculino", "feminino"],
+      status_cor_enum: ["vermelho", "amarelo", "verde"],
       status_enum: ["pendente", "aprovado", "rejeitado"],
       tipo_acesso_enum: ["recepcao", "discipulador", "rede"],
     },
