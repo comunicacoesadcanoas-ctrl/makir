@@ -58,6 +58,75 @@ export type Database = {
           },
         ]
       }
+      grupos_crescimento: {
+        Row: {
+          bairro: string | null
+          capacidade: number | null
+          criado_em: string
+          data_inicio: string | null
+          dia_encontro: string[] | null
+          endereco: string | null
+          horario: string | null
+          id: string
+          latitude: number | null
+          lider_email: string | null
+          lider_nome: string
+          lider_usuario_id: string | null
+          longitude: number | null
+          nome: string
+          observacoes: string | null
+          status_cor: Database["public"]["Enums"]["status_cor_enum"]
+          status_gc: Database["public"]["Enums"]["status_gc_enum"]
+          telefone_contato: string | null
+          total_membros: number | null
+          zona: string | null
+        }
+        Insert: {
+          bairro?: string | null
+          capacidade?: number | null
+          criado_em?: string
+          data_inicio?: string | null
+          dia_encontro?: string[] | null
+          endereco?: string | null
+          horario?: string | null
+          id?: string
+          latitude?: number | null
+          lider_email?: string | null
+          lider_nome: string
+          lider_usuario_id?: string | null
+          longitude?: number | null
+          nome: string
+          observacoes?: string | null
+          status_cor?: Database["public"]["Enums"]["status_cor_enum"]
+          status_gc?: Database["public"]["Enums"]["status_gc_enum"]
+          telefone_contato?: string | null
+          total_membros?: number | null
+          zona?: string | null
+        }
+        Update: {
+          bairro?: string | null
+          capacidade?: number | null
+          criado_em?: string
+          data_inicio?: string | null
+          dia_encontro?: string[] | null
+          endereco?: string | null
+          horario?: string | null
+          id?: string
+          latitude?: number | null
+          lider_email?: string | null
+          lider_nome?: string
+          lider_usuario_id?: string | null
+          longitude?: number | null
+          nome?: string
+          observacoes?: string | null
+          status_cor?: Database["public"]["Enums"]["status_cor_enum"]
+          status_gc?: Database["public"]["Enums"]["status_gc_enum"]
+          telefone_contato?: string | null
+          total_membros?: number | null
+          zona?: string | null
+        }
+        Relationships: []
+      }
       licoes: {
         Row: {
           concluida: boolean
@@ -268,6 +337,7 @@ export type Database = {
       sexo_enum: "masculino" | "feminino"
       status_cor_enum: "vermelho" | "amarelo" | "verde"
       status_enum: "pendente" | "aprovado" | "rejeitado"
+      status_gc_enum: "ativo" | "em_formacao" | "inativo"
       status_sessao_enum: "presente" | "ausente" | "reagendado"
       tipo_acesso_enum: "recepcao" | "discipulador" | "rede"
     }
@@ -401,6 +471,7 @@ export const Constants = {
       sexo_enum: ["masculino", "feminino"],
       status_cor_enum: ["vermelho", "amarelo", "verde"],
       status_enum: ["pendente", "aprovado", "rejeitado"],
+      status_gc_enum: ["ativo", "em_formacao", "inativo"],
       status_sessao_enum: ["presente", "ausente", "reagendado"],
       tipo_acesso_enum: ["recepcao", "discipulador", "rede"],
     },
