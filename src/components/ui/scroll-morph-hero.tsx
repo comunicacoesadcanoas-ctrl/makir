@@ -79,9 +79,9 @@ function DotGridCanvas() {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    const GAP = 28;
-    const DOT_RADIUS = 1;
-    const GLOW_RADIUS = 150;
+    const GAP = 18;
+    const DOT_RADIUS = 1.2;
+    const GLOW_RADIUS = 180;
 
     const resize = () => {
       const dpr = window.devicePixelRatio || 1;
@@ -107,18 +107,21 @@ function DotGridCanvas() {
           const dy = y - my;
           const dist = Math.sqrt(dx * dx + dy * dy);
           const t = Math.max(0, 1 - dist / GLOW_RADIUS);
-          const alpha = 0.15 + t * 0.7;
-          const radius = DOT_RADIUS + t * 1.5;
+          const alpha = 0.25 + t * 0.75;
+          const radius = DOT_RADIUS + t * 2;
 
           if (t > 0.01) {
             ctx.beginPath();
             ctx.arc(x, y, radius, 0, Math.PI * 2);
-            ctx.fillStyle = `hsla(80, 65%, 55%, ${alpha})`;
+            ctx.fillStyle = `hsla(80, 65%, 52%, ${alpha})`;
+            ctx.shadowColor = `hsla(80, 65%, 55%, ${t * 0.6})`;
+            ctx.shadowBlur = t * 8;
             ctx.fill();
+            ctx.shadowBlur = 0;
           } else {
             ctx.beginPath();
             ctx.arc(x, y, DOT_RADIUS, 0, Math.PI * 2);
-            ctx.fillStyle = `hsla(220, 10%, 78%, 0.22)`;
+            ctx.fillStyle = `hsla(220, 8%, 58%, 0.38)`;
             ctx.fill();
           }
         }
@@ -300,7 +303,7 @@ export default function ScrollMorphHero({
             animate={{ opacity: introPhase === "scatter" ? 0 : 1, y: introPhase === "scatter" ? 20 : 0 }}
             transition={{ duration: 0.8 }}
           >
-            <img src={logoDark} alt={title} className="h-14 md:h-20" />
+            <img src={logoDark} alt={title} className="h-20 md:h-32 drop-shadow-lg" />
           </motion.div>
           <motion.p
             className="text-xs md:text-sm text-muted-foreground mt-4 tracking-[0.3em] uppercase"
@@ -317,8 +320,8 @@ export default function ScrollMorphHero({
           animate={{ opacity: showContent ? 1 : 0, y: showContent ? 0 : 20 }}
           transition={{ duration: 0.8, delay: 0.2 }}
         >
-          <img src={logoDark} alt={contentTitle} className="h-12 md:h-16 mb-4" />
-          <p className="text-sm md:text-base text-muted-foreground max-w-md text-center px-4">
+          <img src={logoDark} alt={contentTitle} className="h-20 md:h-28 mb-6 drop-shadow-lg" />
+          <p className="text-base md:text-lg text-muted-foreground max-w-lg text-center px-4 font-medium">
             {contentDescription}
           </p>
           {children && (

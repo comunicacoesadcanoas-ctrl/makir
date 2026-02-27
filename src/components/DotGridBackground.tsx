@@ -16,9 +16,9 @@ export default function DotGridBackground({ className = "", children }: DotGridB
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    const GAP = 28;
-    const DOT_RADIUS = 1;
-    const GLOW_RADIUS = 150;
+    const GAP = 18;
+    const DOT_RADIUS = 1.2;
+    const GLOW_RADIUS = 180;
 
     const resize = () => {
       const dpr = window.devicePixelRatio || 1;
@@ -48,21 +48,21 @@ export default function DotGridBackground({ className = "", children }: DotGridB
           const dist = Math.sqrt(dx * dx + dy * dy);
 
           const t = Math.max(0, 1 - dist / GLOW_RADIUS);
-          // Base: subtle gray dot. On hover: glow to accent color
-          const alpha = 0.12 + t * 0.7;
-          const radius = DOT_RADIUS + t * 1.5;
+          const alpha = 0.25 + t * 0.75;
+          const radius = DOT_RADIUS + t * 2;
 
           if (t > 0.01) {
-            // Glow: lime-green accent
             ctx.beginPath();
             ctx.arc(x, y, radius, 0, Math.PI * 2);
-            ctx.fillStyle = `hsla(80, 65%, 55%, ${alpha})`;
+            ctx.fillStyle = `hsla(80, 65%, 52%, ${alpha})`;
+            ctx.shadowColor = `hsla(80, 65%, 55%, ${t * 0.6})`;
+            ctx.shadowBlur = t * 8;
             ctx.fill();
+            ctx.shadowBlur = 0;
           } else {
-            // Base dot
             ctx.beginPath();
             ctx.arc(x, y, DOT_RADIUS, 0, Math.PI * 2);
-            ctx.fillStyle = `hsla(220, 10%, 70%, 0.18)`;
+            ctx.fillStyle = `hsla(220, 8%, 58%, 0.38)`;
             ctx.fill();
           }
         }
