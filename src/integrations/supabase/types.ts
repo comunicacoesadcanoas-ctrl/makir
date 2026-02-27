@@ -117,6 +117,47 @@ export type Database = {
         }
         Relationships: []
       }
+      relatorios: {
+        Row: {
+          criado_em: string
+          data_hora: string
+          discipulador_id: string
+          discipulo_id: string
+          id: string
+          licao_numero: number
+          observacoes: string
+          status_sessao: Database["public"]["Enums"]["status_sessao_enum"]
+        }
+        Insert: {
+          criado_em?: string
+          data_hora?: string
+          discipulador_id: string
+          discipulo_id: string
+          id?: string
+          licao_numero: number
+          observacoes: string
+          status_sessao?: Database["public"]["Enums"]["status_sessao_enum"]
+        }
+        Update: {
+          criado_em?: string
+          data_hora?: string
+          discipulador_id?: string
+          discipulo_id?: string
+          id?: string
+          licao_numero?: number
+          observacoes?: string
+          status_sessao?: Database["public"]["Enums"]["status_sessao_enum"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "relatorios_discipulo_id_fkey"
+            columns: ["discipulo_id"]
+            isOneToOne: false
+            referencedRelation: "discipulos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       users: {
         Row: {
           criado_em: string
@@ -227,6 +268,7 @@ export type Database = {
       sexo_enum: "masculino" | "feminino"
       status_cor_enum: "vermelho" | "amarelo" | "verde"
       status_enum: "pendente" | "aprovado" | "rejeitado"
+      status_sessao_enum: "presente" | "ausente" | "reagendado"
       tipo_acesso_enum: "recepcao" | "discipulador" | "rede"
     }
     CompositeTypes: {
@@ -359,6 +401,7 @@ export const Constants = {
       sexo_enum: ["masculino", "feminino"],
       status_cor_enum: ["vermelho", "amarelo", "verde"],
       status_enum: ["pendente", "aprovado", "rejeitado"],
+      status_sessao_enum: ["presente", "ausente", "reagendado"],
       tipo_acesso_enum: ["recepcao", "discipulador", "rede"],
     },
   },
