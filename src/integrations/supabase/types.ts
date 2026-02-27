@@ -14,16 +14,46 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      users: {
+        Row: {
+          criado_em: string
+          email: string
+          foto_url: string | null
+          id: string
+          nome: string
+          status: Database["public"]["Enums"]["status_enum"]
+          tipo_acesso: Database["public"]["Enums"]["tipo_acesso_enum"]
+        }
+        Insert: {
+          criado_em?: string
+          email: string
+          foto_url?: string | null
+          id: string
+          nome: string
+          status?: Database["public"]["Enums"]["status_enum"]
+          tipo_acesso: Database["public"]["Enums"]["tipo_acesso_enum"]
+        }
+        Update: {
+          criado_em?: string
+          email?: string
+          foto_url?: string | null
+          id?: string
+          nome?: string
+          status?: Database["public"]["Enums"]["status_enum"]
+          tipo_acesso?: Database["public"]["Enums"]["tipo_acesso_enum"]
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      is_admin: { Args: never; Returns: boolean }
     }
     Enums: {
-      [_ in never]: never
+      status_enum: "pendente" | "aprovado" | "rejeitado"
+      tipo_acesso_enum: "recepcao" | "discipulador" | "rede"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +180,9 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      status_enum: ["pendente", "aprovado", "rejeitado"],
+      tipo_acesso_enum: ["recepcao", "discipulador", "rede"],
+    },
   },
 } as const
