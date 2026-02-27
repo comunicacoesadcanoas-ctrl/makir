@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, useRef, ReactNode } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
@@ -28,15 +28,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile>(null);
   const [loading, setLoading] = useState(true);
+  const initialLoadDone = useRef(false);
 
   const fetchProfile = async (userId: string) => {
-    const { data } = await supabase
-      .from("users")
-      .select("*")
-      .eq("id", userId)
-      .maybeSingle();
-    setProfile(data);
-    return data;
+    try {
+      const { data, error } = await supabase
+        .from("users")
+        .select("*")
+        .eq("id", userId)
+        .maybeSingle();
+      if (error) throw error;
+      setProfile(data);
+      return data;
+    } catch (e) {
+      console.error("Failed to fetch profile:", e);
+      setProfile(null);
+      return null;
+    }
   };
 
   const refreshProfile = async () => {
@@ -62,9 +70,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } else {
           setProfile(null);
         }
+        if (initialLoadDone.current) return;
+        initialLoadDone.current = true;
         setLoading(false);
       }
     );
+
+    // Fallback timeout to guarantee loading clears
+    const timeout = setTimeout(() => {
+      if (!initialLoadDone.current) {
+        console.warn("Auth init timed out, releasing loading state");
+        initialLoadDone.current = true;
+        setLoading(false);
+      }
+    }, 5000);
 
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       setSession(session);
@@ -72,10 +91,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (session?.user) {
         await fetchProfile(session.user.id);
       }
-      setLoading(false);
+      if (!initialLoadDone.current) {
+        initialLoadDone.current = true;
+        setLoading(false);
+      }
+    }).catch(() => {
+      if (!initialLoadDone.current) {
+        initialLoadDone.current = true;
+        setLoading(false);
+      }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      clearTimeout(timeout);
+      subscription.unsubscribe();
+    };
   }, []);
 
   return (
