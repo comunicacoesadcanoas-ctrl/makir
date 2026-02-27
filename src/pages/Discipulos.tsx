@@ -1,16 +1,155 @@
-import { BookOpen } from "lucide-react";
+import { useEffect, useState, useCallback } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { usePermissions } from "@/hooks/usePermissions";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { BookOpen, Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
+import { DiscipuloDetailDialog } from "@/components/DiscipuloDetailDialog";
+
+interface DiscipuloWithVisitante {
+  id: string;
+  visitante_id: string;
+  discipulador_id: string;
+  discipulador_nome: string;
+  progresso_percentual: number;
+  licoes_concluidas: number;
+  data_inicio: string;
+  status_cor: string;
+  ultima_atividade: string | null;
+  visitantes: {
+    nome: string;
+    telefone: string;
+    cidade: string | null;
+    foto_url?: string | null;
+    aceitou_jesus: boolean;
+    frequenta_igreja: boolean;
+    quer_gc: boolean;
+    quer_discipulado: boolean;
+    estado_civil: string | null;
+    sexo: string | null;
+    endereco: string | null;
+    observacoes: string | null;
+    ano: string | null;
+    criado_em: string;
+  } | null;
+}
+
+const statusColors: Record<string, { bg: string; ring: string; label: string }> = {
+  vermelho: { bg: "bg-destructive", ring: "ring-destructive/30", label: "Sem lições" },
+  amarelo: { bg: "bg-warning", ring: "ring-warning/30", label: "Inativo >15 dias" },
+  verde: { bg: "bg-success", ring: "ring-success/30", label: "Ativo" },
+};
 
 export default function Discipulos() {
+  const { userRole } = usePermissions();
+  const [discipulos, setDiscipulos] = useState<DiscipuloWithVisitante[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  const fetchDiscipulos = useCallback(async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from("discipulos")
+      .select("*, visitantes(nome, telefone, cidade, aceitou_jesus, frequenta_igreja, quer_gc, quer_discipulado, estado_civil, sexo, endereco, observacoes, ano, criado_em)")
+      .order("data_inicio", { ascending: false });
+
+    if (error) {
+      toast.error("Erro ao carregar discípulos");
+      console.error(error);
+    } else {
+      setDiscipulos((data as unknown as DiscipuloWithVisitante[]) || []);
+    }
+    setLoading(false);
+  }, []);
+
+  useEffect(() => { fetchDiscipulos(); }, [fetchDiscipulos]);
+
+  const filtered = discipulos.filter((d) => {
+    if (!search) return true;
+    const nome = d.visitantes?.nome || "";
+    return nome.toLowerCase().includes(search.toLowerCase());
+  });
+
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3">
         <BookOpen className="h-6 w-6 text-primary" />
         <h1 className="text-2xl font-bold text-foreground">Discípulos</h1>
+        <Badge variant="secondary" className="text-xs">{discipulos.length}</Badge>
       </div>
-      <p className="text-muted-foreground">Acompanhe o progresso dos discípulos.</p>
-      <div className="rounded-lg border border-border bg-card p-12 text-center">
-        <p className="text-muted-foreground">Nenhum discípulo cadastrado ainda.</p>
+
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input placeholder="Buscar por nome..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
       </div>
+
+      {loading ? (
+        <div className="flex justify-center py-12">
+          <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+        </div>
+      ) : filtered.length === 0 ? (
+        <Card className="border-border">
+          <CardContent className="py-12 text-center text-muted-foreground">
+            {search ? "Nenhum discípulo encontrado." : "Nenhum discípulo registrado ainda."}
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {filtered.map((d) => {
+            const nome = d.visitantes?.nome || "Sem nome";
+            const status = statusColors[d.status_cor] || statusColors.vermelho;
+            const initials = nome.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase();
+            const formattedDate = new Date(d.data_inicio).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
+
+            return (
+              <Card
+                key={d.id}
+                className="border-border hover:border-secondary/40 transition-colors cursor-pointer"
+                onClick={() => setSelectedId(d.id)}
+              >
+                <CardContent className="py-4 px-4 space-y-3">
+                  <div className="flex items-center gap-3">
+                    <div className={`h-3 w-3 rounded-full shrink-0 ring-2 ${status.bg} ${status.ring}`} />
+                    <div className="h-10 w-10 rounded-full bg-secondary/10 flex items-center justify-center text-secondary font-semibold text-sm shrink-0">
+                      {initials}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium text-foreground truncate">{nome}</p>
+                      <p className="text-xs text-muted-foreground">por {d.discipulador_nome}</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-muted-foreground">Progresso</span>
+                      <span className="font-medium text-foreground">{d.licoes_concluidas}/13</span>
+                    </div>
+                    <Progress value={d.progresso_percentual} className="h-2" />
+                  </div>
+
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>Início: {formattedDate}</span>
+                    <Badge variant="outline" className="text-[10px] px-1.5 py-0">{status.label}</Badge>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      )}
+
+      {selectedId && (
+        <DiscipuloDetailDialog
+          open={!!selectedId}
+          onOpenChange={() => setSelectedId(null)}
+          discipuloId={selectedId}
+          onUpdate={fetchDiscipulos}
+        />
+      )}
     </div>
   );
 }
