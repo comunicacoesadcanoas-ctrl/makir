@@ -9,7 +9,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { BarChart3, Plus, Check, Clock, X, CalendarCheck, PartyPopper } from "lucide-react";
+import { BarChart3, Plus, Check, Clock, X, CalendarCheck, PartyPopper, Download } from "lucide-react";
+import { ExportDialog } from "@/components/ExportDialog";
 import { toast } from "sonner";
 import confetti from "canvas-confetti";
 
@@ -63,6 +64,7 @@ export default function Relatorios() {
   const [loading, setLoading] = useState(true);
   const [showFormado, setShowFormado] = useState(false);
   const [formadoNome, setFormadoNome] = useState("");
+  const [exportOpen, setExportOpen] = useState(false);
 
   const fetchDiscipulos = useCallback(async () => {
     const { data, error } = await supabase
@@ -202,9 +204,14 @@ export default function Relatorios() {
           <h1 className="text-2xl font-bold text-foreground">Relatórios</h1>
           <Badge variant="secondary" className="text-xs">{relatorios.length}</Badge>
         </div>
-        <Button onClick={() => setShowForm(true)} size="sm">
-          <Plus className="h-4 w-4 mr-1" /> Novo Relatório
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => setExportOpen(true)} className="gap-1.5">
+            <Download className="h-4 w-4" /> Exportar
+          </Button>
+          <Button onClick={() => setShowForm(true)} size="sm">
+            <Plus className="h-4 w-4 mr-1" /> Novo Relatório
+          </Button>
+        </div>
       </div>
 
       {/* FORM DIALOG */}
@@ -408,6 +415,27 @@ export default function Relatorios() {
           })}
         </div>
       )}
+
+      <ExportDialog
+        open={exportOpen}
+        onOpenChange={setExportOpen}
+        tipo="relatorios"
+        data={relatorios}
+        sheetName="Relatórios"
+        discipuladores={[...new Set(discipulos.map(d => d.visitante_nome))]}
+        filterFn={(row, f) => {
+          if (f.start && row.data_hora < f.start) return false;
+          if (f.end && row.data_hora > f.end + "T23:59:59") return false;
+          return true;
+        }}
+        transformFn={(r) => ({
+          Discípulo: r.visitante_nome || "—",
+          Lição: String(r.licao_numero).padStart(2, "0"),
+          "Data/Hora": new Date(r.data_hora).toLocaleString("pt-BR"),
+          "Status Sessão": r.status_sessao,
+          Observações: r.observacoes,
+        })}
+      />
 
       {/* FORMADO MODAL */}
       <Dialog open={showFormado} onOpenChange={setShowFormado}>

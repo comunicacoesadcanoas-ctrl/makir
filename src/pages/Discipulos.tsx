@@ -3,8 +3,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { usePermissions } from "@/hooks/usePermissions";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { BookOpen, Search } from "lucide-react";
+import { BookOpen, Search, Download } from "lucide-react";
+import { ExportDialog } from "@/components/ExportDialog";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { DiscipuloDetailDialog } from "@/components/DiscipuloDetailDialog";
@@ -49,6 +51,7 @@ export default function Discipulos() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [exportOpen, setExportOpen] = useState(false);
 
   const fetchDiscipulos = useCallback(async () => {
     setLoading(true);
@@ -76,10 +79,15 @@ export default function Discipulos() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-3">
-        <BookOpen className="h-6 w-6 text-primary" />
-        <h1 className="text-2xl font-bold text-foreground">Discípulos</h1>
-        <Badge variant="secondary" className="text-xs">{discipulos.length}</Badge>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <BookOpen className="h-6 w-6 text-primary" />
+          <h1 className="text-2xl font-bold text-foreground">Discípulos</h1>
+          <Badge variant="secondary" className="text-xs">{discipulos.length}</Badge>
+        </div>
+        <Button variant="outline" size="sm" onClick={() => setExportOpen(true)} className="gap-1.5">
+          <Download className="h-4 w-4" /> Exportar
+        </Button>
       </div>
 
       <div className="relative">
@@ -150,6 +158,32 @@ export default function Discipulos() {
           onUpdate={fetchDiscipulos}
         />
       )}
+
+      <ExportDialog
+        open={exportOpen}
+        onOpenChange={setExportOpen}
+        tipo="discipulos"
+        data={discipulos}
+        sheetName="Discípulos"
+        showStatusFilter
+        discipuladores={[...new Set(discipulos.map(d => d.discipulador_nome))]}
+        filterFn={(row, f) => {
+          if (f.status !== "all" && row.status_cor !== f.status) return false;
+          if (f.discipulador !== "all" && row.discipulador_nome !== f.discipulador) return false;
+          if (f.start && row.data_inicio < f.start) return false;
+          if (f.end && row.data_inicio > f.end + "T23:59:59") return false;
+          return true;
+        }}
+        transformFn={(d) => ({
+          Nome: d.visitantes?.nome || "—",
+          Discipulador: d.discipulador_nome,
+          "Lições Concluídas": d.licoes_concluidas,
+          "Progresso %": d.progresso_percentual,
+          "Data Início": new Date(d.data_inicio).toLocaleDateString("pt-BR"),
+          "Última Atividade": d.ultima_atividade ? new Date(d.ultima_atividade).toLocaleDateString("pt-BR") : "—",
+          Status: d.status_cor,
+        })}
+      />
     </div>
   );
 }

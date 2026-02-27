@@ -4,10 +4,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Users, BookOpen, MapPin, UserCheck, UserX, Clock, GraduationCap,
-  TrendingUp, AlertTriangle, LayoutDashboard
+  TrendingUp, AlertTriangle, LayoutDashboard, Printer
 } from "lucide-react";
+import { exportDashboardPDF } from "@/lib/export-utils";
 import {
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
@@ -174,14 +176,17 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" id="dashboard-content">
       {/* HEADER + FILTER */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <LayoutDashboard className="h-6 w-6 text-primary" />
           <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 no-print">
+          <Button variant="outline" size="sm" onClick={exportDashboardPDF} className="gap-1.5">
+            <Printer className="h-4 w-4" /> Exportar PDF
+          </Button>
           <Select value={period} onValueChange={v => setPeriod(v as PeriodFilter)}>
             <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
             <SelectContent>
