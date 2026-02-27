@@ -1,7 +1,8 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Bell, LogOut } from "lucide-react";
+import { LogOut } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
+import { NotificacoesDropdown } from "@/components/NotificacoesDropdown";
 
 export function AppHeader() {
   const { profile, user, signOut } = useAuth();
@@ -16,9 +17,7 @@ export function AppHeader() {
       <div className="hidden md:block" />
 
       <div className="flex items-center gap-3">
-        <button className="relative p-2 rounded-lg hover:bg-muted transition-colors">
-          <Bell className="h-5 w-5 text-muted-foreground" />
-        </button>
+        <NotificacoesDropdown />
 
         <div className="flex items-center gap-3">
           <div className="text-right hidden sm:block">
