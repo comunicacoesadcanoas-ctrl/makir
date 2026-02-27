@@ -117,7 +117,7 @@ function DotGridCanvas() {
           } else {
             ctx.beginPath();
             ctx.arc(x, y, DOT_RADIUS, 0, Math.PI * 2);
-            ctx.fillStyle = `hsla(0, 0%, 45%, 0.15)`;
+            ctx.fillStyle = `hsla(220, 10%, 78%, 0.22)`;
             ctx.fill();
           }
         }
@@ -280,7 +280,7 @@ export default function ScrollMorphHero({
   const showContent = introPhase === "final";
 
   return (
-    <div className="relative w-full h-screen overflow-hidden bg-primary">
+    <div className="relative w-full h-screen overflow-hidden bg-background">
       {/* Dot grid background */}
       <DotGridCanvas />
 
@@ -296,14 +296,14 @@ export default function ScrollMorphHero({
           transition={{ duration: 1 }}
         >
           <motion.h1
-            className="text-4xl md:text-6xl font-extrabold text-primary-foreground tracking-tight"
+            className="text-4xl md:text-6xl font-extrabold text-foreground tracking-tight"
             animate={{ opacity: introPhase === "scatter" ? 0 : 1, y: introPhase === "scatter" ? 20 : 0 }}
             transition={{ duration: 0.8 }}
           >
             {title}
           </motion.h1>
           <motion.p
-            className="text-xs md:text-sm text-primary-foreground/50 mt-4 tracking-[0.3em] uppercase"
+            className="text-xs md:text-sm text-muted-foreground mt-4 tracking-[0.3em] uppercase"
             animate={{ opacity: introPhase === "line" ? 1 : 0 }}
             transition={{ duration: 0.5, delay: 0.3 }}
           >
@@ -317,10 +317,10 @@ export default function ScrollMorphHero({
           animate={{ opacity: showContent ? 1 : 0, y: showContent ? 0 : 20 }}
           transition={{ duration: 0.8, delay: 0.2 }}
         >
-          <h2 className="text-2xl md:text-4xl font-extrabold text-primary-foreground mb-4">
+          <h2 className="text-2xl md:text-4xl font-extrabold text-foreground mb-4">
             {contentTitle}
           </h2>
-          <p className="text-sm md:text-base text-primary-foreground/50 max-w-md text-center px-4">
+          <p className="text-sm md:text-base text-muted-foreground max-w-md text-center px-4">
             {contentDescription}
           </p>
           {children && (

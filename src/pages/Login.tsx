@@ -29,8 +29,8 @@ export default function Login() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-primary">
-        <div className="h-8 w-8 border-4 border-primary-foreground border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="h-8 w-8 border-4 border-foreground border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
