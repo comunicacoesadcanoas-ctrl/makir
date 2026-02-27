@@ -1,42 +1,60 @@
 
 
-## Problem
+## Problema
 
-Every time the user opens the app, they must:
-1. Wait for auth initialization (up to 5 seconds timeout)
-2. See the full hero animation (scatter → line → circle → scroll)
-3. Scroll down to reveal the login button
-4. Click "Entrar com Google"
+Quando um usuário aprovado (ex: `comunicacoesadcanoas@gmail.com` com acesso `rede`) chega em `/selecionar-acesso`, ele vê a mesma tela de novos usuários -- precisa selecionar um perfil e clicar "Entrar". Isso é confuso e desnecessário.
 
-If they already have an active session, they still see the animation before being redirected.
+## Solução: Tela dividida em 2 cards
 
-## Plan
+Para usuários aprovados, a tela será completamente diferente:
 
-### 1. Reduce auth timeout from 5s to 2s
-In `AuthContext.tsx`, change the fallback timeout from 5000ms to 2000ms. This cuts the worst-case loading wait significantly.
+```text
+┌─────────────────────────────────────┐
+│  Bem-vindo, Admin Canoas            │
+│                                     │
+│  ┌───────────────────────────────┐  │
+│  │ ✅ SEU ACESSO ATUAL           │  │
+│  │                               │  │
+│  │  🌐 Acesso 03 — Rede         │  │
+│  │  Gestão completa da rede     │  │
+│  │                               │  │
+│  │  [ Entrar no sistema →   ]   │  │
+│  └───────────────────────────────┘  │
+│                                     │
+│  ┌───────────────────────────────┐  │
+│  │ 📋 SOLICITAR OUTRO ACESSO    │  │
+│  │                               │  │
+│  │  ○ Recepção                  │  │
+│  │  ○ Discipulador              │  │
+│  │                               │  │
+│  │  [ Solicitar acesso ]        │  │
+│  └───────────────────────────────┘  │
+│                                     │
+│        Sair                         │
+└─────────────────────────────────────┘
+```
 
-### 2. Skip hero animation for returning users
-In `Login.tsx`, if there's an active session detected (even during loading), show only the loading spinner and redirect immediately -- never render the ScrollMorphHero. This avoids forcing authenticated users through the animation.
+Para usuários **sem perfil** (novos), a tela permanece como está hoje.
 
-### 3. Skip scroll requirement for login button
-The current `ScrollMorphHero` requires scrolling to reveal the content area (login button). Change the Login page so the login button is visible immediately without scrolling:
-- Add a direct login button overlaid at the bottom of the hero that's always visible (not gated behind scroll progress)
-- Keep the hero animation as a visual background, but the "Entrar com Google" button should be accessible from the start with a subtle "scroll to explore" hint above it
+## Alterações em `src/pages/SelecionarAcesso.tsx`
 
-### 4. Auto-skip animation on revisit
-Store a flag in `sessionStorage` after the first visit. On subsequent visits within the same browser tab, skip the intro animation phases (scatter → line → circle) and go directly to the final state with the login button visible.
+1. **Renderização condicional**: Se `jaTemAcesso`, renderiza o layout de 2 cards. Senão, mantém o layout atual para novos usuários.
 
-### Technical Details
+2. **Card 1 -- "Seu acesso atual"**:
+   - Mostra o tipo de acesso atual do perfil (`profile.tipo_acesso`) com ícone e descrição.
+   - Badge verde indicando "Ativo".
+   - Botão primário destacado "Entrar no sistema" que navega direto para `/app`.
 
-**AuthContext.tsx**: Change timeout `5000` → `2000`
+3. **Card 2 -- "Solicitar outro acesso"**:
+   - Lista apenas os tipos de acesso que o usuário **ainda não tem**.
+   - Seleção + botão "Solicitar acesso" (funcionalidade futura -- por enquanto exibe toast informativo de que a solicitação foi enviada, já que a tabela `users` só suporta um `tipo_acesso`).
 
-**Login.tsx**: 
-- Check `sessionStorage.getItem("makir_visited")` 
-- If visited before, render a simple login page without ScrollMorphHero
-- If first visit, show hero but with login button always visible at bottom
-- Set `sessionStorage.setItem("makir_visited", "true")` on mount
+4. **Saudação personalizada**: Exibe o nome do usuário no topo (ex: "Bem-vindo, Admin Canoas").
 
-**ScrollMorphHero.tsx**:
-- Add prop `skipAnimation?: boolean` that jumps directly to final phase
-- Move children (login button) to always be visible with `pointer-events-auto`, not gated behind `contentOpacity`
+## Detalhes técnicos
+
+- Filtrar `accessOptions` para separar o acesso atual dos demais usando `profile.tipo_acesso`.
+- O botão "Entrar" no Card 1 não precisa de seleção -- navega direto.
+- O Card 2 usa `toast.info()` para informar que a solicitação foi registrada (sem inserção real, pois o schema atual só permite um tipo por usuário).
+- Manter o layout atual intacto para o caso `!jaTemAcesso` (novos usuários).
 
