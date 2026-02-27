@@ -1,1 +1,4 @@
 project_id = "befqepqzzlcajyjanewm"
+
+[functions.daily-status-check]
+verify_jwt = false
