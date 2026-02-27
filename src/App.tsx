@@ -15,7 +15,9 @@ import Visitantes from "./pages/Visitantes";
 import Discipulos from "./pages/Discipulos";
 import Relatorios from "./pages/Relatorios";
 import MapaGCs from "./pages/MapaGCs";
+import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
+import { DefaultRedirect } from "./components/DefaultRedirect";
 
 const queryClient = new QueryClient();
 
@@ -40,12 +42,13 @@ const App = () => (
                 </ProtectedRoute>
               }
             >
-              <Route index element={<Navigate to="dashboard" replace />} />
+              <Route index element={<DefaultRedirect />} />
               <Route path="dashboard" element={<Dashboard />} />
               <Route path="visitantes" element={<Visitantes />} />
               <Route path="discipulos" element={<Discipulos />} />
               <Route path="relatorios" element={<Relatorios />} />
               <Route path="mapa-gcs" element={<MapaGCs />} />
+              <Route path="admin" element={<Admin />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
