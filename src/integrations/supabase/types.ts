@@ -58,6 +58,44 @@ export type Database = {
           },
         ]
       }
+      frequencia_gc: {
+        Row: {
+          criado_em: string
+          gc_id: string
+          id: string
+          mes_referencia: string
+          observacoes: string | null
+          presentes: number
+          registrado_por: string
+        }
+        Insert: {
+          criado_em?: string
+          gc_id: string
+          id?: string
+          mes_referencia: string
+          observacoes?: string | null
+          presentes?: number
+          registrado_por: string
+        }
+        Update: {
+          criado_em?: string
+          gc_id?: string
+          id?: string
+          mes_referencia?: string
+          observacoes?: string | null
+          presentes?: number
+          registrado_por?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "frequencia_gc_gc_id_fkey"
+            columns: ["gc_id"]
+            isOneToOne: false
+            referencedRelation: "grupos_crescimento"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       grupos_crescimento: {
         Row: {
           bairro: string | null
@@ -155,6 +193,54 @@ export type Database = {
             columns: ["discipulo_id"]
             isOneToOne: false
             referencedRelation: "discipulos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      membros_gc: {
+        Row: {
+          criado_em: string
+          data_entrada: string
+          discipulo_id: string | null
+          gc_id: string
+          id: string
+          nome: string
+          telefone: string | null
+          tipo_entrada: string
+        }
+        Insert: {
+          criado_em?: string
+          data_entrada?: string
+          discipulo_id?: string | null
+          gc_id: string
+          id?: string
+          nome: string
+          telefone?: string | null
+          tipo_entrada?: string
+        }
+        Update: {
+          criado_em?: string
+          data_entrada?: string
+          discipulo_id?: string | null
+          gc_id?: string
+          id?: string
+          nome?: string
+          telefone?: string | null
+          tipo_entrada?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "membros_gc_discipulo_id_fkey"
+            columns: ["discipulo_id"]
+            isOneToOne: false
+            referencedRelation: "discipulos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "membros_gc_gc_id_fkey"
+            columns: ["gc_id"]
+            isOneToOne: false
+            referencedRelation: "grupos_crescimento"
             referencedColumns: ["id"]
           },
         ]
