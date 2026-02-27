@@ -90,6 +90,33 @@ export type Database = {
           },
         ]
       }
+      notificacoes: {
+        Row: {
+          criado_em: string
+          id: string
+          lida: boolean
+          mensagem: string
+          tipo: string
+          usuario_id: string
+        }
+        Insert: {
+          criado_em?: string
+          id?: string
+          lida?: boolean
+          mensagem: string
+          tipo: string
+          usuario_id: string
+        }
+        Update: {
+          criado_em?: string
+          id?: string
+          lida?: boolean
+          mensagem?: string
+          tipo?: string
+          usuario_id?: string
+        }
+        Relationships: []
+      }
       users: {
         Row: {
           criado_em: string
@@ -188,6 +215,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      atualizar_status_discipulos: { Args: never; Returns: undefined }
       get_user_tipo_acesso: {
         Args: never
         Returns: Database["public"]["Enums"]["tipo_acesso_enum"]
