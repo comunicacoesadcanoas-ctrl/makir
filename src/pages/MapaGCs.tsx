@@ -9,9 +9,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MapPin, Plus, Users, Clock, Phone, Pencil, Trash2, Search, Map, LayoutGrid } from "lucide-react";
+import { MapPin, Plus, Users, Clock, Phone, Pencil, Trash2, Search, Map, LayoutGrid, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { GoogleMap, useJsApiLoader, Marker, InfoWindow } from "@react-google-maps/api";
+import GCDetailDialog from "@/components/GCDetailDialog";
 
 const GOOGLE_MAPS_KEY = "AIzaSyBsRrFlYOT5_NClqnQYnw1rv2Zr60slr9Q";
 
@@ -89,6 +90,7 @@ export default function MapaGCs() {
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState("cards");
   const [selectedMarker, setSelectedMarker] = useState<string | null>(null);
+  const [detailGC, setDetailGC] = useState<GC | null>(null);
 
   const { isLoaded } = useJsApiLoader({ googleMapsApiKey: GOOGLE_MAPS_KEY });
 
@@ -307,6 +309,9 @@ export default function MapaGCs() {
                           {gc.total_membros}/{gc.capacidade} membros
                         </Badge>
                         <div className="flex gap-1">
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setDetailGC(gc)}>
+                            <Eye className="h-3.5 w-3.5" />
+                          </Button>
                           {gc.latitude && gc.longitude && (
                             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setActiveTab("mapa"); setSelectedMarker(gc.id); }}>
                               <Map className="h-3.5 w-3.5" />
@@ -490,6 +495,15 @@ export default function MapaGCs() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {detailGC && (
+        <GCDetailDialog
+          open={!!detailGC}
+          onOpenChange={() => setDetailGC(null)}
+          gc={detailGC}
+          onUpdate={fetchGcs}
+        />
+      )}
     </div>
   );
 }
