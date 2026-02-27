@@ -1,4 +1,5 @@
 import { Users, BookOpen, BarChart3, MapPin, LayoutDashboard, ShieldCheck, Settings } from "lucide-react";
+import logoWhite from "@/assets/logo-makir-white.svg";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { usePermissions } from "@/hooks/usePermissions";
@@ -24,8 +25,7 @@ export function AppSidebar() {
   return (
     <aside className="hidden md:flex flex-col w-64 bg-sidebar min-h-screen">
       <div className="p-6">
-        <h1 className="text-2xl font-extrabold text-sidebar-foreground tracking-tight">MAKIR</h1>
-        <p className="text-xs text-sidebar-foreground/50 mt-1 tracking-wide uppercase">CRM Eclesiástico</p>
+        <img src={logoWhite} alt="Makir" className="h-10" />
       </div>
 
       <nav className="flex-1 px-3 space-y-0.5">
