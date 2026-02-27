@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, useRef, ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, useRef, useCallback, ReactNode } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
@@ -30,7 +30,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const initialLoadDone = useRef(false);
 
-  const fetchProfile = async (userId: string) => {
+  const fetchProfile = useCallback(async (userId: string) => {
     try {
       const { data, error } = await supabase
         .from("users")
@@ -45,20 +45,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setProfile(null);
       return null;
     }
-  };
+  }, []);
 
-  const refreshProfile = async () => {
-    if (user) {
-      await fetchProfile(user.id);
+  const refreshProfile = useCallback(async () => {
+    const currentUser = user ?? (await supabase.auth.getUser()).data.user;
+    if (currentUser) {
+      await fetchProfile(currentUser.id);
     }
-  };
+  }, [user, fetchProfile]);
 
-  const signOut = async () => {
+  const signOut = useCallback(async () => {
     await supabase.auth.signOut();
     setSession(null);
     setUser(null);
     setProfile(null);
-  };
+  }, []);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -76,14 +77,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     );
 
-    // Fallback timeout to guarantee loading clears
     const timeout = setTimeout(() => {
       if (!initialLoadDone.current) {
         console.warn("Auth init timed out, releasing loading state");
         initialLoadDone.current = true;
         setLoading(false);
       }
-    }, 800);
+    }, 2000);
 
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       setSession(session);
@@ -106,7 +106,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       clearTimeout(timeout);
       subscription.unsubscribe();
     };
-  }, []);
+  }, [fetchProfile]);
+
+  // Refresh profile on window focus (catches admin approvals while tab was inactive)
+  useEffect(() => {
+    const onFocus = () => {
+      if (user) fetchProfile(user.id);
+    };
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
+  }, [user, fetchProfile]);
 
   return (
     <AuthContext.Provider value={{ session, user, profile, loading, signOut, refreshProfile }}>

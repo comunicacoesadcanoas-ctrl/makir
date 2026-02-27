@@ -4,21 +4,14 @@ import { useAuth } from "@/contexts/AuthContext";
 import { lovable } from "@/integrations/lovable";
 import ScrollMorphHero from "@/components/ui/scroll-morph-hero";
 import { ArrowRight } from "lucide-react";
+import { resolveUserLandingRoute } from "@/lib/resolve-route";
 
 export default function Login() {
   const navigate = useNavigate();
   const { session, profile, loading } = useAuth();
 
   const handleContinue = () => {
-    if (!profile) {
-      navigate("/selecionar-acesso", { replace: true });
-    } else if (profile.status === "aprovado") {
-      navigate("/app", { replace: true });
-    } else if (profile.status === "pendente") {
-      navigate("/aguardando-aprovacao", { replace: true });
-    } else {
-      navigate("/acesso-negado", { replace: true });
-    }
+    navigate(resolveUserLandingRoute(profile), { replace: true });
   };
 
   const handleGoogleLogin = async () => {
