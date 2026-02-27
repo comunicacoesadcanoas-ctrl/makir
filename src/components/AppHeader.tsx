@@ -12,7 +12,7 @@ export function AppHeader() {
   return (
     <header className="h-16 border-b border-border bg-card flex items-center justify-between px-4 md:px-6">
       <div className="md:hidden">
-        <h1 className="text-lg font-bold text-primary tracking-tight">MAKIR</h1>
+        <h1 className="text-lg font-extrabold text-foreground tracking-tight">MAKIR</h1>
       </div>
       <div className="hidden md:block" />
 
@@ -21,16 +21,16 @@ export function AppHeader() {
 
         <div className="flex items-center gap-3">
           <div className="text-right hidden sm:block">
-            <p className="text-sm font-medium text-foreground">{nome}</p>
-            <p className="text-xs text-muted-foreground capitalize">{profile?.tipo_acesso || "Líder"}</p>
+            <p className="text-sm font-semibold text-foreground">{nome}</p>
+            <p className="text-[11px] text-muted-foreground capitalize">{profile?.tipo_acesso || "Líder"}</p>
           </div>
-          <Avatar className="h-9 w-9 border-2 border-secondary">
+          <Avatar className="h-9 w-9 ring-2 ring-accent/30">
             <AvatarImage src={foto} alt={nome} />
-            <AvatarFallback className="bg-secondary text-secondary-foreground text-sm font-semibold">
+            <AvatarFallback className="bg-accent text-accent-foreground text-sm font-bold">
               {nome.charAt(0).toUpperCase()}
             </AvatarFallback>
           </Avatar>
-          <Button variant="ghost" size="icon" onClick={signOut} className="text-muted-foreground">
+          <Button variant="ghost" size="icon" onClick={signOut} className="text-muted-foreground hover:text-foreground">
             <LogOut className="h-4 w-4" />
           </Button>
         </div>
