@@ -13,6 +13,7 @@ import { BarChart3, Plus, Check, Clock, X, CalendarCheck, PartyPopper, Download 
 import { ExportDialog } from "@/components/ExportDialog";
 import { toast } from "sonner";
 import confetti from "canvas-confetti";
+import { PaginationControls, usePagination } from "@/components/Pagination";
 
 type StatusSessao = "presente" | "ausente" | "reagendado";
 
@@ -65,6 +66,7 @@ export default function Relatorios() {
   const [showFormado, setShowFormado] = useState(false);
   const [formadoNome, setFormadoNome] = useState("");
   const [exportOpen, setExportOpen] = useState(false);
+  const [page, setPage] = useState(1);
 
   const fetchDiscipulos = useCallback(async () => {
     const { data, error } = await supabase
@@ -185,6 +187,10 @@ export default function Relatorios() {
   const filteredRelatorios = filterDiscipulo === "all"
     ? relatorios
     : relatorios.filter(r => r.discipulo_id === filterDiscipulo);
+
+  const { paginate, totalPages } = usePagination(filteredRelatorios);
+  const paginatedRelatorios = paginate(page);
+  useEffect(() => { setPage(1); }, [filterDiscipulo]);
 
   // Progress view for selected discipulo
   const progressDiscipulo = filterDiscipulo !== "all"
@@ -386,34 +392,37 @@ export default function Relatorios() {
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-2">
-          {filteredRelatorios.map(r => {
-            const cfg = statusSessaoConfig[r.status_sessao as StatusSessao] || statusSessaoConfig.presente;
-            return (
-              <Card key={r.id} className="border-border">
-                <CardContent className="py-3 px-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="font-medium text-foreground text-sm">{r.visitante_nome}</span>
-                        <Badge variant="outline" className="text-[10px] px-1.5">Lição {String(r.licao_numero).padStart(2, "0")}</Badge>
-                        <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium ${cfg.color}`}>
-                          {cfg.icon} {cfg.label}
-                        </span>
+        <>
+          <div className="space-y-2">
+            {paginatedRelatorios.map(r => {
+              const cfg = statusSessaoConfig[r.status_sessao as StatusSessao] || statusSessaoConfig.presente;
+              return (
+                <Card key={r.id} className="border-border">
+                  <CardContent className="py-3 px-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-medium text-foreground text-sm">{r.visitante_nome}</span>
+                          <Badge variant="outline" className="text-[10px] px-1.5">Lição {String(r.licao_numero).padStart(2, "0")}</Badge>
+                          <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium ${cfg.color}`}>
+                            {cfg.icon} {cfg.label}
+                          </span>
+                        </div>
+                        <p className="text-xs text-muted-foreground line-clamp-2">{r.observacoes}</p>
                       </div>
-                      <p className="text-xs text-muted-foreground line-clamp-2">{r.observacoes}</p>
+                      <span className="text-[10px] text-muted-foreground whitespace-nowrap">
+                        {new Date(r.data_hora).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit" })}
+                        {" "}
+                        {new Date(r.data_hora).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                      </span>
                     </div>
-                    <span className="text-[10px] text-muted-foreground whitespace-nowrap">
-                      {new Date(r.data_hora).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit" })}
-                      {" "}
-                      {new Date(r.data_hora).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
-                    </span>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+          <PaginationControls page={page} totalPages={totalPages} onPageChange={setPage} />
+        </>
       )}
 
       <ExportDialog

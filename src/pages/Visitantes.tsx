@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { VisitanteFormDialog } from "@/components/VisitanteFormDialog";
 import { AssumirDiscipuladoDialog } from "@/components/AssumirDiscipuladoDialog";
 import type { Tables } from "@/integrations/supabase/types";
+import { PaginationControls, usePagination } from "@/components/Pagination";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -39,6 +40,7 @@ export default function Visitantes() {
   const [deleteTarget, setDeleteTarget] = useState<Visitante | null>(null);
   const [assumirTarget, setAssumirTarget] = useState<Visitante | null>(null);
   const [exportOpen, setExportOpen] = useState(false);
+  const [page, setPage] = useState(1);
 
   const fetchVisitantes = useCallback(async () => {
     setLoading(true);
@@ -74,6 +76,12 @@ export default function Visitantes() {
     const matchesStatus = !statusFilter || v.status_cor === statusFilter;
     return matchesSearch && matchesStatus;
   });
+
+  const { paginate, totalPages } = usePagination(filtered);
+  const paginatedItems = paginate(page);
+
+  // Reset page when filters change
+  useEffect(() => { setPage(1); }, [search, statusFilter]);
 
   return (
     <div className="space-y-4">
@@ -118,48 +126,51 @@ export default function Visitantes() {
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-2">
-          {filtered.map((v) => {
-            const status = statusColors[v.status_cor] || statusColors.vermelho;
-            const formattedDate = new Date(v.criado_em).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
-            const showAssumir = canAssumir && (v.status_cor === "amarelo" || (isAdmin && v.status_cor !== "verde"));
+        <>
+          <div className="space-y-2">
+            {paginatedItems.map((v) => {
+              const status = statusColors[v.status_cor] || statusColors.vermelho;
+              const formattedDate = new Date(v.criado_em).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
+              const showAssumir = canAssumir && (v.status_cor === "amarelo" || (isAdmin && v.status_cor !== "verde"));
 
-            return (
-              <Card key={v.id} className="border-border hover:border-secondary/40 transition-colors">
-                <CardContent className="py-3 px-4">
-                  <div className="flex items-center gap-3">
-                    <div className={`h-3 w-3 rounded-full shrink-0 ring-2 ${status.bg} ${status.ring}`} />
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-foreground truncate">{v.nome}</p>
-                      <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted-foreground mt-0.5">
-                        {v.cidade && <span>{v.cidade}</span>}
-                        <span>{formattedDate}</span>
-                        <span>por {v.cadastrado_por_nome}</span>
+              return (
+                <Card key={v.id} className="border-border hover:border-secondary/40 transition-colors">
+                  <CardContent className="py-3 px-4">
+                    <div className="flex items-center gap-3">
+                      <div className={`h-3 w-3 rounded-full shrink-0 ring-2 ${status.bg} ${status.ring}`} />
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-foreground truncate">{v.nome}</p>
+                        <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted-foreground mt-0.5">
+                          {v.cidade && <span>{v.cidade}</span>}
+                          <span>{formattedDate}</span>
+                          <span>por {v.cadastrado_por_nome}</span>
+                        </div>
+                      </div>
+                      <div className="flex gap-1 shrink-0">
+                        {showAssumir && (
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-success hover:text-success" onClick={() => setAssumirTarget(v)} title="Discipular">
+                            <HeartHandshake className="h-4 w-4" />
+                          </Button>
+                        )}
+                        {canEdit && (
+                          <>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={() => { setEditingVisitante(v); setFormOpen(true); }}>
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => setDeleteTarget(v)}>
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </>
+                        )}
                       </div>
                     </div>
-                    <div className="flex gap-1 shrink-0">
-                      {showAssumir && (
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-success hover:text-success" onClick={() => setAssumirTarget(v)} title="Discipular">
-                          <HeartHandshake className="h-4 w-4" />
-                        </Button>
-                      )}
-                      {canEdit && (
-                        <>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={() => { setEditingVisitante(v); setFormOpen(true); }}>
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => setDeleteTarget(v)}>
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+          <PaginationControls page={page} totalPages={totalPages} onPageChange={setPage} />
+        </>
       )}
 
       {formOpen && (

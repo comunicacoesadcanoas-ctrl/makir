@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      configuracoes: {
+        Row: {
+          atualizado_em: string
+          cidade_padrao: string
+          criado_em: string
+          dias_inatividade: number
+          email_admin: string | null
+          id: string
+          latitude_padrao: number | null
+          longitude_padrao: number | null
+          nome_organizacao: string
+        }
+        Insert: {
+          atualizado_em?: string
+          cidade_padrao?: string
+          criado_em?: string
+          dias_inatividade?: number
+          email_admin?: string | null
+          id?: string
+          latitude_padrao?: number | null
+          longitude_padrao?: number | null
+          nome_organizacao?: string
+        }
+        Update: {
+          atualizado_em?: string
+          cidade_padrao?: string
+          criado_em?: string
+          dias_inatividade?: number
+          email_admin?: string | null
+          id?: string
+          latitude_padrao?: number | null
+          longitude_padrao?: number | null
+          nome_organizacao?: string
+        }
+        Relationships: []
+      }
       discipulos: {
         Row: {
           data_inicio: string

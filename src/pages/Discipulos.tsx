@@ -10,6 +10,7 @@ import { ExportDialog } from "@/components/ExportDialog";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { DiscipuloDetailDialog } from "@/components/DiscipuloDetailDialog";
+import { PaginationControls, usePagination } from "@/components/Pagination";
 
 interface DiscipuloWithVisitante {
   id: string;
@@ -52,6 +53,7 @@ export default function Discipulos() {
   const [search, setSearch] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [exportOpen, setExportOpen] = useState(false);
+  const [page, setPage] = useState(1);
 
   const fetchDiscipulos = useCallback(async () => {
     setLoading(true);
@@ -76,6 +78,10 @@ export default function Discipulos() {
     const nome = d.visitantes?.nome || "";
     return nome.toLowerCase().includes(search.toLowerCase());
   });
+
+  const { paginate, totalPages } = usePagination(filtered);
+  const paginatedItems = paginate(page);
+  useEffect(() => { setPage(1); }, [search]);
 
   return (
     <div className="space-y-4">
@@ -106,48 +112,51 @@ export default function Discipulos() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {filtered.map((d) => {
-            const nome = d.visitantes?.nome || "Sem nome";
-            const status = statusColors[d.status_cor] || statusColors.vermelho;
-            const initials = nome.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase();
-            const formattedDate = new Date(d.data_inicio).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {paginatedItems.map((d) => {
+              const nome = d.visitantes?.nome || "Sem nome";
+              const status = statusColors[d.status_cor] || statusColors.vermelho;
+              const initials = nome.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase();
+              const formattedDate = new Date(d.data_inicio).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
 
-            return (
-              <Card
-                key={d.id}
-                className="border-border hover:border-secondary/40 transition-colors cursor-pointer"
-                onClick={() => setSelectedId(d.id)}
-              >
-                <CardContent className="py-4 px-4 space-y-3">
-                  <div className="flex items-center gap-3">
-                    <div className={`h-3 w-3 rounded-full shrink-0 ring-2 ${status.bg} ${status.ring}`} />
-                    <div className="h-10 w-10 rounded-full bg-secondary/10 flex items-center justify-center text-secondary font-semibold text-sm shrink-0">
-                      {initials}
+              return (
+                <Card
+                  key={d.id}
+                  className="border-border hover:border-secondary/40 transition-colors cursor-pointer"
+                  onClick={() => setSelectedId(d.id)}
+                >
+                  <CardContent className="py-4 px-4 space-y-3">
+                    <div className="flex items-center gap-3">
+                      <div className={`h-3 w-3 rounded-full shrink-0 ring-2 ${status.bg} ${status.ring}`} />
+                      <div className="h-10 w-10 rounded-full bg-secondary/10 flex items-center justify-center text-secondary font-semibold text-sm shrink-0">
+                        {initials}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium text-foreground truncate">{nome}</p>
+                        <p className="text-xs text-muted-foreground">por {d.discipulador_nome}</p>
+                      </div>
                     </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="font-medium text-foreground truncate">{nome}</p>
-                      <p className="text-xs text-muted-foreground">por {d.discipulador_nome}</p>
-                    </div>
-                  </div>
 
-                  <div className="space-y-1">
-                    <div className="flex justify-between text-xs">
-                      <span className="text-muted-foreground">Progresso</span>
-                      <span className="font-medium text-foreground">{d.licoes_concluidas}/13</span>
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-xs">
+                        <span className="text-muted-foreground">Progresso</span>
+                        <span className="font-medium text-foreground">{d.licoes_concluidas}/13</span>
+                      </div>
+                      <Progress value={d.progresso_percentual} className="h-2" />
                     </div>
-                    <Progress value={d.progresso_percentual} className="h-2" />
-                  </div>
 
-                  <div className="flex justify-between text-xs text-muted-foreground">
-                    <span>Início: {formattedDate}</span>
-                    <Badge variant="outline" className="text-[10px] px-1.5 py-0">{status.label}</Badge>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                      <span>Início: {formattedDate}</span>
+                      <Badge variant="outline" className="text-[10px] px-1.5 py-0">{status.label}</Badge>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+          <PaginationControls page={page} totalPages={totalPages} onPageChange={setPage} />
+        </>
       )}
 
       {selectedId && (

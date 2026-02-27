@@ -1,4 +1,4 @@
-import { Users, BookOpen, BarChart3, MapPin, LayoutDashboard, ShieldCheck } from "lucide-react";
+import { Users, BookOpen, BarChart3, MapPin, LayoutDashboard, ShieldCheck, Settings } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { usePermissions } from "@/hooks/usePermissions";
@@ -11,6 +11,7 @@ const allNavItems = [
   { title: "Relatórios", url: "/app/relatorios", icon: BarChart3, badgeKey: null },
   { title: "Mapa de GCs", url: "/app/mapa-gcs", icon: MapPin, badgeKey: null },
   { title: "Admin", url: "/app/admin", icon: ShieldCheck, badgeKey: "pendentesAdmin" as const },
+  { title: "Configurações", url: "/app/configuracoes", icon: Settings, badgeKey: null },
 ];
 
 export function AppSidebar() {
@@ -68,7 +69,7 @@ export function BottomNav() {
 
   const visibleItems = allNavItems
     .filter((item) => canViewRoute(item.url))
-    .filter((item) => item.url !== "/app/admin");
+    .filter((item) => item.url !== "/app/admin" && item.url !== "/app/configuracoes");
 
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-card border-t border-border z-50">
