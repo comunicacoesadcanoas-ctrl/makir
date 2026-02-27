@@ -1,60 +1,76 @@
 
+Objetivo imediato: eliminar de forma definitiva a tela errada para usuários já liberados e fechar os furos do fluxo de acesso, depois elevar UX/UI/animações/código sem quebrar regras atuais.
 
-## Problema
+1) Correção crítica do fluxo de acesso (primeiro bloco)
+- Em `src/pages/SelecionarAcesso.tsx`:
+  - Bloquear renderização enquanto `loading` do auth estiver `true` (spinner/skeleton).
+  - Se não houver sessão: redirecionar para `/login`.
+  - Se `profile?.status === "aprovado"`: sempre renderizar layout de 2 cards.
+  - Se `profile?.status === "pendente"`: redirecionar `/aguardando-aprovacao`.
+  - Se `profile?.status === "rejeitado"`: redirecionar `/acesso-negado`.
+  - Se `profile` for `null` após loading: renderizar layout “novo usuário”.
+- Em `src/contexts/AuthContext.tsx`:
+  - Fortalecer sincronização de perfil no login (evitar estado transitório que mostra tela errada).
+  - Adicionar refresh de perfil em foco da aba/retorno à app para refletir aprovações administrativas em tempo real de uso.
+- Em `src/App.tsx`:
+  - Garantir que `/selecionar-acesso` passe por guarda de sessão (usuário logado obrigatório).
 
-Quando um usuário aprovado (ex: `comunicacoesadcanoas@gmail.com` com acesso `rede`) chega em `/selecionar-acesso`, ele vê a mesma tela de novos usuários -- precisa selecionar um perfil e clicar "Entrar". Isso é confuso e desnecessário.
+2) Fechar “furo” de solicitação de outro acesso (hoje é só toast)
+- Criar migração no banco (Lovable Cloud):
+  - Nova tabela `solicitacoes_acesso`:
+    - `id`, `user_id`, `acesso_atual`, `acesso_solicitado`, `status` (`pendente|aprovado|rejeitado`), `observacao`, `criado_em`, `avaliado_em`, `avaliado_por`.
+  - Regras de segurança:
+    - Usuário autenticado cria solicitação própria.
+    - Usuário vê apenas suas solicitações.
+    - Perfil `rede` vê/atualiza todas.
+  - Índice único para impedir duplicadas pendentes (`user_id + acesso_solicitado + status='pendente'`).
+- Em `SelecionarAcesso.tsx`:
+  - Trocar `handleRequestOther` fake por insert real.
+  - Exibir estado do pedido (pendente/aprovado/rejeitado) e desabilitar botão quando já houver pendência para o mesmo acesso.
 
-## Solução: Tela dividida em 2 cards
+3) Administração completa dessas solicitações
+- Em `src/pages/Admin.tsx`:
+  - Adicionar aba “Solicitações de Acesso”.
+  - Listar pedidos pendentes com ações Aprovar/Rejeitar.
+  - Ao aprovar:
+    - Atualizar `users.tipo_acesso` (modelo atual de acesso único).
+    - Marcar solicitação como aprovada.
+  - Ao rejeitar:
+    - Marcar solicitação como rejeitada com motivo opcional.
+  - Recarregar dados com feedback visual.
 
-Para usuários aprovados, a tela será completamente diferente:
+4) UX/UI (alto impacto, baixo risco)
+- Hierarquia visual clara em `SelecionarAcesso`:
+  - Card “Seu acesso atual” sempre primeiro, com badge e CTA principal.
+  - Card “Solicitar outro acesso” com labels de status e estados vazios.
+- Acessibilidade:
+  - Estados de foco visíveis, `aria-pressed` nos cards selecionáveis, mensagens de erro/sucesso consistentes.
+- Feedback:
+  - Toasters padronizados para sucesso/erro/carregando.
+  - Skeleton de carregamento no lugar de “piscar” de layout incorreto.
 
-```text
-┌─────────────────────────────────────┐
-│  Bem-vindo, Admin Canoas            │
-│                                     │
-│  ┌───────────────────────────────┐  │
-│  │ ✅ SEU ACESSO ATUAL           │  │
-│  │                               │  │
-│  │  🌐 Acesso 03 — Rede         │  │
-│  │  Gestão completa da rede     │  │
-│  │                               │  │
-│  │  [ Entrar no sistema →   ]   │  │
-│  └───────────────────────────────┘  │
-│                                     │
-│  ┌───────────────────────────────┐  │
-│  │ 📋 SOLICITAR OUTRO ACESSO    │  │
-│  │                               │  │
-│  │  ○ Recepção                  │  │
-│  │  ○ Discipulador              │  │
-│  │                               │  │
-│  │  [ Solicitar acesso ]        │  │
-│  └───────────────────────────────┘  │
-│                                     │
-│        Sair                         │
-└─────────────────────────────────────┘
-```
+5) Animações (discretas e funcionais)
+- Entrada dos cards com `framer-motion` (`fade + slight slide`).
+- Transições de seleção dos cards (border/background) com duração curta (150–220ms).
+- Evitar animações pesadas para não degradar percepção de performance.
 
-Para usuários **sem perfil** (novos), a tela permanece como está hoje.
+6) Código/arquitetura (sem furo)
+- Extrair regra de decisão de rota para utilitário único (ex.: `resolveUserLandingRoute(profile)`), reutilizado em `Login`, `ProtectedRoute`, `SelecionarAcesso`.
+- Extrair `AccessOptionCard` reutilizável para reduzir duplicação.
+- Criar hook dedicado (`useAccessRequests`) para queries/mutations de solicitações.
+- Garantir tipagem forte dos status e acessos (sem strings soltas espalhadas).
 
-## Alterações em `src/pages/SelecionarAcesso.tsx`
+7) Validação end-to-end obrigatória (antes de concluir)
+- Cenários:
+  - Usuário novo sem perfil.
+  - Usuário pendente.
+  - Usuário rejeitado.
+  - Usuário aprovado (`recepcao`, `discipulador`, `rede`).
+  - Usuário aprovado solicitando troca/acesso adicional.
+  - Admin aprovando/rejeitando solicitação.
+- Validar desktop + mobile e recarga de página em `/selecionar-acesso` sem regressão.
 
-1. **Renderização condicional**: Se `jaTemAcesso`, renderiza o layout de 2 cards. Senão, mantém o layout atual para novos usuários.
-
-2. **Card 1 -- "Seu acesso atual"**:
-   - Mostra o tipo de acesso atual do perfil (`profile.tipo_acesso`) com ícone e descrição.
-   - Badge verde indicando "Ativo".
-   - Botão primário destacado "Entrar no sistema" que navega direto para `/app`.
-
-3. **Card 2 -- "Solicitar outro acesso"**:
-   - Lista apenas os tipos de acesso que o usuário **ainda não tem**.
-   - Seleção + botão "Solicitar acesso" (funcionalidade futura -- por enquanto exibe toast informativo de que a solicitação foi enviada, já que a tabela `users` só suporta um `tipo_acesso`).
-
-4. **Saudação personalizada**: Exibe o nome do usuário no topo (ex: "Bem-vindo, Admin Canoas").
-
-## Detalhes técnicos
-
-- Filtrar `accessOptions` para separar o acesso atual dos demais usando `profile.tipo_acesso`.
-- O botão "Entrar" no Card 1 não precisa de seleção -- navega direto.
-- O Card 2 usa `toast.info()` para informar que a solicitação foi registrada (sem inserção real, pois o schema atual só permite um tipo por usuário).
-- Manter o layout atual intacto para o caso `!jaTemAcesso` (novos usuários).
-
+Detalhes técnicos (objetivos)
+- Sintoma atual: código do layout de 2 cards existe, porém o fluxo ainda permite cair na versão de “novo usuário” em cenários reais.
+- Estratégia de robustez: proteger render por estado de autenticação carregado + centralizar decisão de rota + persistir solicitação “outro acesso” no backend.
+- Resultado esperado: usuário já liberado nunca mais vê tela de solicitação inicial; fluxo administrativo e de troca de acesso passa a ser real, auditável e consistente.
