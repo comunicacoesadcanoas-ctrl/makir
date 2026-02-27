@@ -32,14 +32,22 @@ const accessOptions: { value: TipoAcesso; label: string; description: string; ic
 ];
 
 export default function SelecionarAcesso() {
-  const { user, refreshProfile, signOut } = useAuth();
+  const { user, profile, refreshProfile, signOut } = useAuth();
   const navigate = useNavigate();
   const [selected, setSelected] = useState<TipoAcesso | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
+  const jaTemAcesso = profile?.status === "aprovado";
+
   const handleSubmit = async () => {
     if (!selected || !user) return;
     setSubmitting(true);
+
+    if (jaTemAcesso) {
+      // User already has access, just navigate
+      navigate("/app", { replace: true });
+      return;
+    }
 
     const { error } = await supabase.from("users").insert({
       id: user.id,
@@ -95,7 +103,7 @@ export default function SelecionarAcesso() {
             disabled={!selected || submitting}
             className="w-full mt-4"
           >
-            {submitting ? "Enviando..." : "Solicitar acesso"}
+            {submitting ? "Enviando..." : jaTemAcesso ? "Entrar" : "Solicitar acesso"}
           </Button>
 
           <Button variant="ghost" className="w-full text-muted-foreground" onClick={signOut}>
