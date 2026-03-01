@@ -9,8 +9,6 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import AppLayout from "./layouts/AppLayout";
 import { DefaultRedirect } from "./components/DefaultRedirect";
 
-// Lazy loaded pages (code splitting)
-
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Visitantes = lazy(() => import("./pages/Visitantes"));
 const Discipulos = lazy(() => import("./pages/Discipulos"));
@@ -23,8 +21,8 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 60 * 2, // 2 minutes
-      gcTime: 1000 * 60 * 5, // 5 minutes  
+      staleTime: 1000 * 60 * 2,
+      gcTime: 1000 * 60 * 5,
       refetchOnWindowFocus: false,
     },
   },
@@ -47,9 +45,6 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Navigate to="/app/dashboard" replace />} />
               <Route path="/login" element={<Navigate to="/app/dashboard" replace />} />
-              <Route path="/selecionar-acesso" element={<Navigate to="/app/dashboard" replace />} />
-              <Route path="/aguardando-aprovacao" element={<Navigate to="/app/dashboard" replace />} />
-              <Route path="/acesso-negado" element={<Navigate to="/app/dashboard" replace />} />
               <Route
                 path="/app"
                 element={

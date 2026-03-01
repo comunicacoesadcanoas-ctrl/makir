@@ -10,6 +10,7 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
   const location = useLocation();
   const redirecting = useRef(false);
 
+  // Auto-trigger Google login when not authenticated (only once)
   useEffect(() => {
     if (!loading && !session && !redirecting.current) {
       redirecting.current = true;
@@ -19,32 +20,16 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
     }
   }, [loading, session]);
 
-  if (loading || !session) {
+  // Single loading screen for all auth states
+  if (loading || !session || !profile) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center space-y-2">
-          <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
-          <p className="text-muted-foreground text-sm">
-            {loading ? "Carregando..." : "Redirecionando para login..."}
-          </p>
-        </div>
+        <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
-  // If no profile yet, show loading (AuthContext will auto-create it)
-  if (!profile) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center space-y-2">
-          <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
-          <p className="text-muted-foreground text-sm">Preparando seu acesso...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Check route-level permission (skip for /app itself since it redirects)
+  // Route permission check
   const currentPath = location.pathname;
   if (currentPath !== "/app" && !canViewRoute(currentPath)) {
     return <Navigate to="/app" replace />;

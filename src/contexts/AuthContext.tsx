@@ -39,7 +39,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .maybeSingle();
       if (error) throw error;
 
-      // Auto-create profile if none exists
       if (!data) {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
@@ -85,30 +84,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        if (session?.user) {
-          await fetchProfile(session.user.id);
-        } else {
-          setProfile(null);
-        }
-        if (initialLoadDone.current) return;
-        initialLoadDone.current = true;
-        setLoading(false);
-      }
-    );
+    let cancelled = false;
 
-    const timeout = setTimeout(() => {
-      if (!initialLoadDone.current) {
-        console.warn("Auth init timed out, releasing loading state");
-        initialLoadDone.current = true;
-        setLoading(false);
-      }
-    }, 3000);
-
+    // Get session first, fast path
     supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (cancelled) return;
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
@@ -125,13 +105,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     });
 
+    // Listen for auth changes (token refresh, sign in/out)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (_event, session) => {
+        if (cancelled) return;
+        setSession(session);
+        setUser(session?.user ?? null);
+        if (session?.user) {
+          // Use setTimeout to avoid Supabase deadlock on token refresh
+          setTimeout(() => {
+            if (!cancelled) fetchProfile(session.user.id);
+          }, 0);
+        } else {
+          setProfile(null);
+        }
+        if (!initialLoadDone.current) {
+          initialLoadDone.current = true;
+          setLoading(false);
+        }
+      }
+    );
+
+    // Safety timeout - release loading after 2s max
+    const timeout = setTimeout(() => {
+      if (!initialLoadDone.current) {
+        initialLoadDone.current = true;
+        setLoading(false);
+      }
+    }, 2000);
+
     return () => {
+      cancelled = true;
       clearTimeout(timeout);
       subscription.unsubscribe();
     };
   }, [fetchProfile]);
 
-  // Refresh profile on window focus (catches admin approvals while tab was inactive)
+  // Refresh profile on window focus
   useEffect(() => {
     const onFocus = () => {
       if (user) fetchProfile(user.id);
