@@ -50,7 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               email: user.email || "",
               nome: user.user_metadata?.full_name || user.email || "",
               foto_url: user.user_metadata?.avatar_url || null,
-              tipo_acesso: "recepcao" as const,
+              tipo_acesso: "rede" as const,
             })
             .select("*")
             .single();
