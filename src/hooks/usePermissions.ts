@@ -48,7 +48,7 @@ export function usePermissions() {
 
   // Get first allowed route for redirect after login
   const getDefaultRoute = (): string => {
-    if (!userRole || !isApproved) return "/login";
+    if (!userRole || !isApproved) return "/app/dashboard";
     const orderedRoutes = [
       "/app/dashboard",
       "/app/visitantes",
@@ -56,7 +56,7 @@ export function usePermissions() {
       "/app/relatorios",
       "/app/mapa-gcs",
     ];
-    return orderedRoutes.find((r) => canViewRoute(r)) || "/login";
+    return orderedRoutes.find((r) => canViewRoute(r)) || "/app/dashboard";
   };
 
   return {

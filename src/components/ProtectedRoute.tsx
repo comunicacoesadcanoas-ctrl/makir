@@ -1,25 +1,35 @@
+import { useEffect, useRef } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePermissions } from "@/hooks/usePermissions";
+import { lovable } from "@/integrations/lovable";
 
 export default function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { session, profile, loading } = useAuth();
   const { canViewRoute } = usePermissions();
   const location = useLocation();
+  const redirecting = useRef(false);
 
-  if (loading) {
+  useEffect(() => {
+    if (!loading && !session && !redirecting.current) {
+      redirecting.current = true;
+      lovable.auth.signInWithOAuth("google", {
+        redirect_uri: window.location.origin + "/app/dashboard",
+      });
+    }
+  }, [loading, session]);
+
+  if (loading || !session) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center space-y-2">
           <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
-          <p className="text-muted-foreground text-sm">Carregando...</p>
+          <p className="text-muted-foreground text-sm">
+            {loading ? "Carregando..." : "Redirecionando para login..."}
+          </p>
         </div>
       </div>
     );
-  }
-
-  if (!session) {
-    return <Navigate to="/login" replace />;
   }
 
   // If no profile yet, show loading (AuthContext will auto-create it)

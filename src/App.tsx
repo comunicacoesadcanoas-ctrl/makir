@@ -10,7 +10,7 @@ import AppLayout from "./layouts/AppLayout";
 import { DefaultRedirect } from "./components/DefaultRedirect";
 
 // Lazy loaded pages (code splitting)
-const Login = lazy(() => import("./pages/Login"));
+
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Visitantes = lazy(() => import("./pages/Visitantes"));
 const Discipulos = lazy(() => import("./pages/Discipulos"));
@@ -45,11 +45,11 @@ const App = () => (
         <AuthProvider>
           <Suspense fallback={<PageLoader />}>
             <Routes>
-              <Route path="/" element={<Navigate to="/login" replace />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/selecionar-acesso" element={<Navigate to="/app" replace />} />
-              <Route path="/aguardando-aprovacao" element={<Navigate to="/app" replace />} />
-              <Route path="/acesso-negado" element={<Navigate to="/app" replace />} />
+              <Route path="/" element={<Navigate to="/app/dashboard" replace />} />
+              <Route path="/login" element={<Navigate to="/app/dashboard" replace />} />
+              <Route path="/selecionar-acesso" element={<Navigate to="/app/dashboard" replace />} />
+              <Route path="/aguardando-aprovacao" element={<Navigate to="/app/dashboard" replace />} />
+              <Route path="/acesso-negado" element={<Navigate to="/app/dashboard" replace />} />
               <Route
                 path="/app"
                 element={
