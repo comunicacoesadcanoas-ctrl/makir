@@ -154,7 +154,7 @@ export default function SelecionarAcesso() {
           transition={{ duration: 0.35 }}
           className="w-full max-w-md space-y-4"
         >
-          <img src={logoMakir} alt="Makir" className="h-10 mx-auto" />
+          <img src={logoMakir} alt="Makir" className="h-20 mx-auto" />
           <p className="text-sm text-center text-muted-foreground mt-1">
             O que deseja fazer?
           </p>
