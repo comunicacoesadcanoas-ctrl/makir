@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,9 +7,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { ClipboardList, BookOpen, Network, ArrowRight, Clock, CheckCircle2, XCircle } from "lucide-react";
+import { ClipboardList, BookOpen, Network, ArrowRight, Clock, UserCheck, UserPlus, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useMyAccessRequests, useCreateAccessRequest } from "@/hooks/useAccessRequests";
+import { resolveUserLandingRoute } from "@/lib/resolve-route";
 import type { Database } from "@/integrations/supabase/types";
 
 type TipoAcesso = Database["public"]["Enums"]["tipo_acesso_enum"];
@@ -44,11 +45,15 @@ const fadeSlide = {
   }),
 };
 
+type Step = "choose" | "solicitar" | "ja-tenho";
+
 export default function SelecionarAcesso() {
   const { session, user, profile, loading, refreshProfile, signOut } = useAuth();
   const navigate = useNavigate();
+  const [step, setStep] = useState<Step>("choose");
   const [selected, setSelected] = useState<TipoAcesso | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [checking, setChecking] = useState(false);
 
   const { data: myRequests = [], isLoading: loadingRequests } = useMyAccessRequests();
   const createRequest = useCreateAccessRequest();
@@ -68,20 +73,46 @@ export default function SelecionarAcesso() {
 
   if (!session) return <Navigate to="/login" replace />;
 
+  // If profile already loaded and approved → redirect straight to app
+  if (profile?.status === "aprovado") {
+    return <Navigate to={resolveUserLandingRoute(profile)} replace />;
+  }
   if (profile?.status === "pendente") return <Navigate to="/aguardando-aprovacao" replace />;
   if (profile?.status === "rejeitado") return <Navigate to="/acesso-negado" replace />;
 
-  // --- Derived state ---
-  const jaTemAcesso = profile?.status === "aprovado";
-  const currentAccess = jaTemAcesso ? accessOptions.find((opt) => opt.value === profile?.tipo_acesso) : null;
-  const otherOptions = jaTemAcesso ? accessOptions.filter((opt) => opt.value !== profile?.tipo_acesso) : accessOptions;
+  // --- Handlers ---
+  const handleJaTenhoAcesso = async () => {
+    setChecking(true);
+    try {
+      // Force re-fetch profile from DB
+      await refreshProfile();
+      // After refresh, the component will re-render.
+      // If profile is now approved, the guard above will redirect.
+      // If still null, the user doesn't actually have access.
+      const { data } = await supabase
+        .from("users")
+        .select("status, tipo_acesso")
+        .eq("id", user!.id)
+        .maybeSingle();
 
-  // Helper: get pending request status for a given access type
-  const getRequestStatus = (tipo: TipoAcesso) => {
-    return myRequests.find((r) => r.acesso_solicitado === tipo && r.status === "pendente");
+      if (data?.status === "aprovado") {
+        navigate(resolveUserLandingRoute(data as any), { replace: true });
+      } else if (data?.status === "pendente") {
+        navigate("/aguardando-aprovacao", { replace: true });
+      } else if (data) {
+        toast.error("Seu acesso foi negado. Entre em contato com o administrador.");
+      } else {
+        toast.error("Nenhum cadastro encontrado para este email. Solicite acesso primeiro.");
+        setStep("choose");
+      }
+    } catch (e) {
+      console.error(e);
+      toast.error("Erro ao verificar acesso. Tente novamente.");
+    } finally {
+      setChecking(false);
+    }
   };
 
-  // --- Handlers ---
   const handleSubmitNew = async () => {
     if (!selected || !user) return;
     setSubmitting(true);
@@ -95,8 +126,15 @@ export default function SelecionarAcesso() {
     });
 
     if (error) {
-      toast.error("Erro ao salvar solicitação. Tente novamente.");
-      console.error(error);
+      if (error.code === "23505") {
+        // User already exists — refresh and redirect
+        toast.info("Você já possui um cadastro! Redirecionando...");
+        await refreshProfile();
+        navigate(resolveUserLandingRoute(profile), { replace: true });
+      } else {
+        toast.error("Erro ao salvar solicitação. Tente novamente.");
+        console.error(error);
+      }
       setSubmitting(false);
       return;
     }
@@ -105,117 +143,59 @@ export default function SelecionarAcesso() {
     navigate("/aguardando-aprovacao", { replace: true });
   };
 
-  const handleRequestOther = async () => {
-    if (!selected || !profile) return;
-    try {
-      await createRequest.mutateAsync({
-        acesso_atual: profile.tipo_acesso,
-        acesso_solicitado: selected,
-      });
-      toast.success("Solicitação enviada! Um administrador irá avaliar seu pedido.");
-      setSelected(null);
-    } catch (e: any) {
-      if (e?.code === "23505") {
-        toast.error("Você já possui uma solicitação pendente para esse acesso.");
-      } else {
-        toast.error("Erro ao enviar solicitação.");
-        console.error(e);
-      }
-    }
-  };
-
-  // --- Approved user: 2-card layout ---
-  if (jaTemAcesso && currentAccess) {
-    const firstName = profile?.nome?.split(" ")[0] || "Usuário";
-
+  // --- Step: Choose ---
+  if (step === "choose") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background px-4">
-        <div className="w-full max-w-md space-y-4">
-          <motion.h1
-            className="text-2xl font-bold text-center text-foreground"
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-          >
-            Bem-vindo, {firstName}
-          </motion.h1>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35 }}
+          className="w-full max-w-md space-y-4"
+        >
+          <h1 className="text-2xl font-bold text-center text-foreground">
+            Bem-vindo ao Makir
+          </h1>
+          <p className="text-sm text-center text-muted-foreground">
+            O que deseja fazer?
+          </p>
 
-          {/* Card 1: Current access */}
           <motion.div custom={0} variants={fadeSlide} initial="hidden" animate="visible">
-            <Card className="shadow-lg border-border">
-              <CardHeader className="pb-2">
-                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  Seu acesso atual
-                </p>
-              </CardHeader>
-              <CardContent className="space-y-4 pb-6">
-                <div className="flex items-center gap-4 p-4 rounded-lg border-2 border-secondary bg-secondary/5">
-                  <div className="p-2 rounded-lg text-secondary">{currentAccess.icon}</div>
-                  <div className="flex-1">
-                    <p className="font-medium text-foreground">{currentAccess.label}</p>
-                    <p className="text-xs text-muted-foreground">{currentAccess.description}</p>
-                  </div>
-                  <Badge className="bg-success text-success-foreground border-transparent">Ativo</Badge>
+            <Card
+              className="shadow-lg border-border cursor-pointer hover:border-secondary/50 transition-all duration-200"
+              onClick={() => setStep("solicitar")}
+            >
+              <CardContent className="flex items-center gap-4 p-6">
+                <div className="p-3 rounded-xl bg-primary/10 text-primary">
+                  <UserPlus className="h-7 w-7" />
                 </div>
-                <Button className="w-full" onClick={() => navigate("/app", { replace: true })}>
-                  Entrar no sistema <ArrowRight className="ml-1 h-4 w-4" />
-                </Button>
+                <div className="flex-1">
+                  <p className="font-semibold text-foreground text-lg">Solicitar Acesso</p>
+                  <p className="text-sm text-muted-foreground">
+                    Ainda não tenho cadastro no sistema
+                  </p>
+                </div>
+                <ArrowRight className="h-5 w-5 text-muted-foreground" />
               </CardContent>
             </Card>
           </motion.div>
 
-          {/* Card 2: Request other access */}
           <motion.div custom={1} variants={fadeSlide} initial="hidden" animate="visible">
-            <Card className="shadow-lg border-border">
-              <CardHeader className="pb-2">
-                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  Solicitar outro acesso
-                </p>
-              </CardHeader>
-              <CardContent className="space-y-3 pb-6">
-                {otherOptions.map((opt) => {
-                  const pendingReq = getRequestStatus(opt.value);
-                  const isPending = !!pendingReq;
-
-                  return (
-                    <button
-                      key={opt.value}
-                      onClick={() => !isPending && setSelected(opt.value)}
-                      disabled={isPending}
-                      aria-pressed={selected === opt.value}
-                      className={`w-full flex items-center gap-4 p-4 rounded-lg border-2 transition-all duration-200 text-left ${
-                        isPending
-                          ? "border-warning/30 bg-warning/5 cursor-not-allowed opacity-70"
-                          : selected === opt.value
-                          ? "border-secondary bg-secondary/5"
-                          : "border-border hover:border-muted-foreground/30"
-                      }`}
-                    >
-                      <div className={`p-2 rounded-lg ${
-                        isPending ? "text-warning" : selected === opt.value ? "text-secondary" : "text-muted-foreground"
-                      }`}>
-                        {opt.icon}
-                      </div>
-                      <div className="flex-1">
-                        <p className="font-medium text-foreground">{opt.label}</p>
-                        <p className="text-xs text-muted-foreground">{opt.description}</p>
-                      </div>
-                      {isPending && (
-                        <Badge variant="outline" className="text-warning border-warning/40 gap-1 shrink-0">
-                          <Clock className="h-3 w-3" /> Pendente
-                        </Badge>
-                      )}
-                    </button>
-                  );
-                })}
-                <Button
-                  variant="outline"
-                  onClick={handleRequestOther}
-                  disabled={!selected || createRequest.isPending}
-                  className="w-full mt-2"
-                >
-                  {createRequest.isPending ? "Enviando..." : "Solicitar acesso"}
-                </Button>
+            <Card
+              className="shadow-lg border-border cursor-pointer hover:border-secondary/50 transition-all duration-200"
+              onClick={handleJaTenhoAcesso}
+            >
+              <CardContent className="flex items-center gap-4 p-6">
+                <div className="p-3 rounded-xl bg-secondary/10 text-secondary">
+                  {checking ? <Loader2 className="h-7 w-7 animate-spin" /> : <UserCheck className="h-7 w-7" />}
+                </div>
+                <div className="flex-1">
+                  <p className="font-semibold text-foreground text-lg">Já tenho acesso</p>
+                  <p className="text-sm text-muted-foreground">
+                    Meu email já foi aprovado pelo administrador
+                  </p>
+                </div>
+                <ArrowRight className="h-5 w-5 text-muted-foreground" />
               </CardContent>
             </Card>
           </motion.div>
@@ -225,12 +205,12 @@ export default function SelecionarAcesso() {
               Sair
             </Button>
           </motion.div>
-        </div>
+        </motion.div>
       </div>
     );
   }
 
-  // --- New user: original layout ---
+  // --- Step: Solicitar (new user form) ---
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}>
@@ -275,8 +255,12 @@ export default function SelecionarAcesso() {
               {submitting ? "Enviando..." : "Solicitar acesso"}
             </Button>
 
-            <Button variant="ghost" className="w-full text-muted-foreground" onClick={signOut}>
-              Sair
+            <Button
+              variant="ghost"
+              className="w-full text-muted-foreground"
+              onClick={() => setStep("choose")}
+            >
+              Voltar
             </Button>
           </CardContent>
         </Card>
