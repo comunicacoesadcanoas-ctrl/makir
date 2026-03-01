@@ -50,9 +50,9 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Navigate to="/login" replace />} />
               <Route path="/login" element={<Login />} />
-              <Route path="/selecionar-acesso" element={<SelecionarAcesso />} />
-              <Route path="/aguardando-aprovacao" element={<AguardandoAprovacao />} />
-              <Route path="/acesso-negado" element={<AcessoNegado />} />
+              <Route path="/selecionar-acesso" element={<Navigate to="/app" replace />} />
+              <Route path="/aguardando-aprovacao" element={<Navigate to="/app" replace />} />
+              <Route path="/acesso-negado" element={<Navigate to="/app" replace />} />
               <Route
                 path="/app"
                 element={

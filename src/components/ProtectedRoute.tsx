@@ -22,16 +22,16 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
     return <Navigate to="/login" replace />;
   }
 
+  // If no profile yet, show loading (AuthContext will auto-create it)
   if (!profile) {
-    return <Navigate to="/selecionar-acesso" replace />;
-  }
-
-  if (profile.status === "pendente") {
-    return <Navigate to="/aguardando-aprovacao" replace />;
-  }
-
-  if (profile.status === "rejeitado") {
-    return <Navigate to="/acesso-negado" replace />;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center space-y-2">
+          <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-muted-foreground text-sm">Preparando seu acesso...</p>
+        </div>
+      </div>
+    );
   }
 
   // Check route-level permission (skip for /app itself since it redirects)
