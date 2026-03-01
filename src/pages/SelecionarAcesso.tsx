@@ -1,16 +1,14 @@
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { ClipboardList, BookOpen, Network, ArrowRight, Clock, UserCheck, UserPlus, Loader2 } from "lucide-react";
+import { ClipboardList, BookOpen, Network } from "lucide-react";
 import { motion } from "framer-motion";
 import logoMakir from "@/assets/logo-makir.svg";
-import { useMyAccessRequests, useCreateAccessRequest } from "@/hooks/useAccessRequests";
 import { resolveUserLandingRoute } from "@/lib/resolve-route";
 import type { Database } from "@/integrations/supabase/types";
 
@@ -46,27 +44,18 @@ const fadeSlide = {
   }),
 };
 
-type Step = "choose" | "solicitar" | "ja-tenho";
-
 export default function SelecionarAcesso() {
   const { session, user, profile, loading, refreshProfile, signOut } = useAuth();
   const navigate = useNavigate();
-  const [step, setStep] = useState<Step>("choose");
   const [selected, setSelected] = useState<TipoAcesso | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [checking, setChecking] = useState(false);
 
-  const { data: myRequests = [], isLoading: loadingRequests } = useMyAccessRequests();
-  const createRequest = useCreateAccessRequest();
-
-  // --- Guards ---
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background px-4">
         <div className="w-full max-w-md space-y-4">
           <Skeleton className="h-8 w-48 mx-auto" />
           <Skeleton className="h-48 w-full rounded-lg" />
-          <Skeleton className="h-40 w-full rounded-lg" />
         </div>
       </div>
     );
@@ -74,50 +63,12 @@ export default function SelecionarAcesso() {
 
   if (!session) return <Navigate to="/login" replace />;
 
-  // If profile already loaded and approved → redirect straight to app
+  // Already has profile → go straight to app
   if (profile?.status === "aprovado") {
     return <Navigate to={resolveUserLandingRoute(profile)} replace />;
   }
-  if (profile?.status === "pendente") return <Navigate to="/aguardando-aprovacao" replace />;
-  if (profile?.status === "rejeitado") return <Navigate to="/acesso-negado" replace />;
 
-  // --- Handlers ---
-  const handleJaTenhoAcesso = async () => {
-    if (!user) {
-      toast.error("Sessão não carregada. Tente recarregar a página.");
-      return;
-    }
-    setChecking(true);
-    try {
-      // Direct query — doesn't depend on profile state
-      const { data, error } = await supabase
-        .from("users")
-        .select("*")
-        .eq("id", user.id)
-        .maybeSingle();
-
-      if (error) throw error;
-
-      if (data?.status === "aprovado") {
-        // Force profile into context then navigate
-        await refreshProfile();
-        navigate(resolveUserLandingRoute(data as any), { replace: true });
-      } else if (data?.status === "pendente") {
-        navigate("/aguardando-aprovacao", { replace: true });
-      } else if (data?.status === "rejeitado") {
-        toast.error("Seu acesso foi negado. Entre em contato com o administrador.");
-      } else {
-        toast.error("Nenhum cadastro encontrado para este email. Solicite acesso primeiro.");
-      }
-    } catch (e) {
-      console.error("Erro ao verificar acesso:", e);
-      toast.error("Erro ao verificar acesso. Tente novamente.");
-    } finally {
-      setChecking(false);
-    }
-  };
-
-  const handleSubmitNew = async () => {
+  const handleSubmit = async () => {
     if (!selected || !user) return;
     setSubmitting(true);
 
@@ -131,12 +82,12 @@ export default function SelecionarAcesso() {
 
     if (error) {
       if (error.code === "23505") {
-        // User already exists — refresh and redirect
         toast.info("Você já possui um cadastro! Redirecionando...");
         await refreshProfile();
-        navigate(resolveUserLandingRoute(profile), { replace: true });
+        const freshProfile = (await supabase.from("users").select("*").eq("id", user.id).maybeSingle()).data;
+        navigate(resolveUserLandingRoute(freshProfile), { replace: true });
       } else {
-        toast.error("Erro ao salvar solicitação. Tente novamente.");
+        toast.error("Erro ao criar conta. Tente novamente.");
         console.error(error);
       }
       setSubmitting(false);
@@ -144,83 +95,19 @@ export default function SelecionarAcesso() {
     }
 
     await refreshProfile();
-    navigate("/aguardando-aprovacao", { replace: true });
+    // Status defaults to 'aprovado' now, go straight to app
+    const freshProfile = (await supabase.from("users").select("*").eq("id", user.id).maybeSingle()).data;
+    navigate(resolveUserLandingRoute(freshProfile), { replace: true });
   };
 
-  // --- Step: Choose ---
-  if (step === "choose") {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background px-4">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35 }}
-          className="w-full max-w-md space-y-4"
-        >
-          <img src={logoMakir} alt="Makir" className="h-40 mx-auto" />
-          <p className="text-sm text-center text-muted-foreground mt-1">
-            O que deseja fazer?
-          </p>
-
-          <motion.div custom={0} variants={fadeSlide} initial="hidden" animate="visible">
-            <Card
-              className="shadow-lg border-border cursor-pointer hover:border-secondary/50 transition-all duration-200"
-              onClick={() => setStep("solicitar")}
-            >
-              <CardContent className="flex items-center gap-4 p-6">
-                <div className="p-3 rounded-xl bg-primary/10 text-primary">
-                  <UserPlus className="h-7 w-7" />
-                </div>
-                <div className="flex-1">
-                  <p className="font-semibold text-foreground text-lg">Solicitar Acesso</p>
-                  <p className="text-sm text-muted-foreground">
-                    Ainda não tenho cadastro no sistema
-                  </p>
-                </div>
-                <ArrowRight className="h-5 w-5 text-muted-foreground" />
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          <motion.div custom={1} variants={fadeSlide} initial="hidden" animate="visible">
-            <Card
-              className="shadow-lg border-border cursor-pointer hover:border-secondary/50 transition-all duration-200"
-              onClick={handleJaTenhoAcesso}
-            >
-              <CardContent className="flex items-center gap-4 p-6">
-                <div className="p-3 rounded-xl bg-secondary/10 text-secondary">
-                  {checking ? <Loader2 className="h-7 w-7 animate-spin" /> : <UserCheck className="h-7 w-7" />}
-                </div>
-                <div className="flex-1">
-                  <p className="font-semibold text-foreground text-lg">Já tenho acesso</p>
-                  <p className="text-sm text-muted-foreground">
-                    Meu email já foi aprovado pelo administrador
-                  </p>
-                </div>
-                <ArrowRight className="h-5 w-5 text-muted-foreground" />
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          <motion.div custom={2} variants={fadeSlide} initial="hidden" animate="visible">
-            <Button variant="ghost" className="w-full text-muted-foreground" onClick={signOut}>
-              Sair
-            </Button>
-          </motion.div>
-        </motion.div>
-      </div>
-    );
-  }
-
-  // --- Step: Solicitar (new user form) ---
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}>
         <Card className="w-full max-w-md shadow-lg border-border">
           <CardHeader className="text-center pb-2">
-            <h1 className="text-2xl font-bold text-primary">Selecione seu perfil</h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Escolha o tipo de acesso que deseja solicitar
+            <img src={logoMakir} alt="Makir" className="h-20 mx-auto mb-2" />
+            <p className="text-sm text-muted-foreground">
+              Escolha seu perfil de acesso para continuar
             </p>
           </CardHeader>
           <CardContent className="space-y-3 pb-6">
@@ -250,19 +137,15 @@ export default function SelecionarAcesso() {
             ))}
 
             <Button
-              onClick={handleSubmitNew}
+              onClick={handleSubmit}
               disabled={!selected || submitting}
               className="w-full mt-4"
             >
-              {submitting ? "Enviando..." : "Solicitar acesso"}
+              {submitting ? "Entrando..." : "Continuar"}
             </Button>
 
-            <Button
-              variant="ghost"
-              className="w-full text-muted-foreground"
-              onClick={() => setStep("choose")}
-            >
-              Voltar
+            <Button variant="ghost" className="w-full text-muted-foreground" onClick={signOut}>
+              Sair
             </Button>
           </CardContent>
         </Card>
