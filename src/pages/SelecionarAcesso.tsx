@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { ClipboardList, BookOpen, Network, ArrowRight, Clock, UserCheck, UserPlus, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
+import logoMakir from "@/assets/logo-makir.svg";
 import { useMyAccessRequests, useCreateAccessRequest } from "@/hooks/useAccessRequests";
 import { resolveUserLandingRoute } from "@/lib/resolve-route";
 import type { Database } from "@/integrations/supabase/types";
@@ -153,10 +154,8 @@ export default function SelecionarAcesso() {
           transition={{ duration: 0.35 }}
           className="w-full max-w-md space-y-4"
         >
-          <h1 className="text-2xl font-bold text-center text-foreground">
-            Bem-vindo ao Makir
-          </h1>
-          <p className="text-sm text-center text-muted-foreground">
+          <img src={logoMakir} alt="Makir" className="h-10 mx-auto" />
+          <p className="text-sm text-center text-muted-foreground mt-1">
             O que deseja fazer?
           </p>
 
