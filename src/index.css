@@ -62,3 +62,34 @@
     font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
   }
 }
+
+@keyframes mapPinDrop {
+  0% { transform: translateY(-20px) scale(0.6); opacity: 0; }
+  60% { transform: translateY(2px) scale(1.05); opacity: 1; }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+/* Mapbox popup dark theme */
+.mapboxgl-popup-content {
+  background: #0f1117 !important;
+  color: #fff !important;
+  border: 1px solid rgba(255,255,255,0.1) !important;
+  border-radius: 0.75rem !important;
+  padding: 12px !important;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4) !important;
+  backdrop-filter: blur(12px);
+}
+
+.mapboxgl-popup-tip {
+  border-top-color: #0f1117 !important;
+}
+
+.mapboxgl-popup-close-button {
+  color: rgba(255,255,255,0.5) !important;
+  font-size: 18px !important;
+}
+
+.mapboxgl-popup-close-button:hover {
+  color: #fff !important;
+  background: transparent !important;
+}

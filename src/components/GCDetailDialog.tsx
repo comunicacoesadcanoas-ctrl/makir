@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { usePermissions } from "@/hooks/usePermissions";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -13,14 +13,14 @@ import {
   CalendarCheck, BarChart3, Search
 } from "lucide-react";
 import { toast } from "sonner";
-import { GoogleMap, useJsApiLoader, Marker } from "@react-google-maps/api";
+import mapboxgl from "mapbox-gl";
+import "mapbox-gl/dist/mapbox-gl.css";
 import {
   ChartContainer, ChartTooltip, ChartTooltipContent,
 } from "@/components/ui/chart";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from "recharts";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid } from "recharts";
 
-const GOOGLE_MAPS_KEY = import.meta.env.VITE_GOOGLE_MAPS_KEY || "";
-const LIBRARIES: ("places")[] = ["places"];
+const MAPBOX_TOKEN_KEY = "mapbox_access_token";
 
 interface GC {
   id: string;
@@ -67,8 +67,6 @@ interface Props {
   onUpdate: () => void;
 }
 
-const miniMapStyle = { width: "100%", height: "200px", borderRadius: "0.5rem" };
-
 const markerColors: Record<string, string> = {
   verde: "#22c55e",
   amarelo: "#eab308",
@@ -81,7 +79,6 @@ export default function GCDetailDialog({ open, onOpenChange, gc, onUpdate }: Pro
   const [frequencias, setFrequencias] = useState<Frequencia[]>([]);
   const [tab, setTab] = useState("info");
 
-  // Add member states
   const [showAddMember, setShowAddMember] = useState(false);
   const [addMode, setAddMode] = useState<"manual" | "discipulo">("manual");
   const [manualNome, setManualNome] = useState("");
@@ -90,7 +87,6 @@ export default function GCDetailDialog({ open, onOpenChange, gc, onUpdate }: Pro
   const [discResults, setDiscResults] = useState<any[]>([]);
   const [savingMember, setSavingMember] = useState(false);
 
-  // Frequency form states
   const [showFreqForm, setShowFreqForm] = useState(false);
   const [freqMes, setFreqMes] = useState(() => {
     const d = new Date();
@@ -100,7 +96,8 @@ export default function GCDetailDialog({ open, onOpenChange, gc, onUpdate }: Pro
   const [freqObs, setFreqObs] = useState("");
   const [savingFreq, setSavingFreq] = useState(false);
 
-  const { isLoaded } = useJsApiLoader({ googleMapsApiKey: GOOGLE_MAPS_KEY, libraries: LIBRARIES });
+  const miniMapRef = useRef<HTMLDivElement>(null);
+  const miniMapInstanceRef = useRef<mapboxgl.Map | null>(null);
 
   const fetchMembros = useCallback(async () => {
     const { data } = await supabase
@@ -127,7 +124,34 @@ export default function GCDetailDialog({ open, onOpenChange, gc, onUpdate }: Pro
     }
   }, [open, fetchMembros, fetchFrequencias]);
 
-  // Search formed disciples (13 lessons completed)
+  // Mini map for info tab
+  useEffect(() => {
+    if (!open || tab !== "info" || !gc.latitude || !gc.longitude || !miniMapRef.current) return;
+    if (miniMapInstanceRef.current) return;
+
+    const token = localStorage.getItem(MAPBOX_TOKEN_KEY);
+    if (!token) return;
+
+    mapboxgl.accessToken = token;
+    const map = new mapboxgl.Map({
+      container: miniMapRef.current,
+      style: "mapbox://styles/mapbox/dark-v11",
+      center: [gc.longitude, gc.latitude],
+      zoom: 15,
+      interactive: false,
+    });
+
+    const color = markerColors[gc.status_cor] || markerColors.verde;
+    new mapboxgl.Marker({ color }).setLngLat([gc.longitude, gc.latitude]).addTo(map);
+
+    miniMapInstanceRef.current = map;
+
+    return () => {
+      map.remove();
+      miniMapInstanceRef.current = null;
+    };
+  }, [open, tab, gc.latitude, gc.longitude, gc.status_cor]);
+
   const searchDiscipulos = async (q: string) => {
     setDiscSearch(q);
     if (q.length < 2) { setDiscResults([]); return; }
@@ -203,7 +227,7 @@ export default function GCDetailDialog({ open, onOpenChange, gc, onUpdate }: Pro
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(o) => { onOpenChange(o); if (!o) { miniMapInstanceRef.current?.remove(); miniMapInstanceRef.current = null; } }}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -236,18 +260,9 @@ export default function GCDetailDialog({ open, onOpenChange, gc, onUpdate }: Pro
             </div>
 
             {/* Mini map */}
-            {isLoaded && gc.latitude && gc.longitude && (
-              <div className="rounded-lg overflow-hidden border border-border">
-                <GoogleMap mapContainerStyle={miniMapStyle} center={{ lat: gc.latitude, lng: gc.longitude }} zoom={15}>
-                  <Marker
-                    position={{ lat: gc.latitude, lng: gc.longitude }}
-                    icon={{
-                      path: google.maps.SymbolPath.CIRCLE, scale: 12,
-                      fillColor: markerColors[gc.status_cor] || markerColors.verde,
-                      fillOpacity: 1, strokeWeight: 2, strokeColor: "#ffffff",
-                    }}
-                  />
-                </GoogleMap>
+            {gc.latitude && gc.longitude && (
+              <div className="rounded-lg overflow-hidden border border-border" style={{ height: "200px" }}>
+                <div ref={miniMapRef} style={{ width: "100%", height: "100%" }} />
               </div>
             )}
           </TabsContent>
@@ -362,7 +377,6 @@ export default function GCDetailDialog({ open, onOpenChange, gc, onUpdate }: Pro
               </Button>
             </div>
 
-            {/* Growth chart */}
             {chartData.length > 1 ? (
               <Card className="border-border">
                 <CardContent className="pt-4 pb-2">
@@ -384,7 +398,6 @@ export default function GCDetailDialog({ open, onOpenChange, gc, onUpdate }: Pro
               <p className="text-sm text-muted-foreground text-center py-2">Registre mais meses para visualizar o gráfico de crescimento.</p>
             ) : null}
 
-            {/* Frequency list */}
             {frequencias.length === 0 ? (
               <p className="text-center text-muted-foreground text-sm py-6">Nenhuma frequência registrada.</p>
             ) : (
@@ -405,7 +418,6 @@ export default function GCDetailDialog({ open, onOpenChange, gc, onUpdate }: Pro
               </div>
             )}
 
-            {/* Frequency form dialog */}
             <Dialog open={showFreqForm} onOpenChange={setShowFreqForm}>
               <DialogContent className="max-w-sm">
                 <DialogHeader>
