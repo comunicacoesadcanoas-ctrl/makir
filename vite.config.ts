@@ -5,6 +5,7 @@ import { VitePWA } from "vite-plugin-pwa";
 
 // https://vitejs.dev/config/
 export default defineConfig(async ({ mode }) => {
+  // @ts-ignore - lovable-tagger is optional dev dependency
   const tagger = mode === "development"
     ? await import("lovable-tagger").then(m => m.componentTagger()).catch(() => null)
     : null;

@@ -5,11 +5,11 @@ type TipoAcesso = Database["public"]["Enums"]["tipo_acesso_enum"];
 
 // Route permissions matrix
 const routePermissions: Record<string, TipoAcesso[]> = {
-  "/app/dashboard": ["rede"],
+  "/app/dashboard": ["recepcao", "discipulador", "rede"],
   "/app/visitantes": ["recepcao", "discipulador", "rede"],
-  "/app/discipulos": ["discipulador", "rede"],
-  "/app/relatorios": ["discipulador", "rede"],
-  "/app/mapa-gcs": ["discipulador", "rede"],
+  "/app/discipulos": ["recepcao", "discipulador", "rede"],
+  "/app/relatorios": ["recepcao", "discipulador", "rede"],
+  "/app/mapa-gcs": ["recepcao", "discipulador", "rede"],
   "/app/admin": ["rede"],
   "/app/configuracoes": ["rede"],
 };
