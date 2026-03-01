@@ -20,6 +20,7 @@ import {
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from "recharts";
 
 const GOOGLE_MAPS_KEY = import.meta.env.VITE_GOOGLE_MAPS_KEY || "";
+const LIBRARIES: ("places")[] = ["places"];
 
 interface GC {
   id: string;
@@ -99,7 +100,7 @@ export default function GCDetailDialog({ open, onOpenChange, gc, onUpdate }: Pro
   const [freqObs, setFreqObs] = useState("");
   const [savingFreq, setSavingFreq] = useState(false);
 
-  const { isLoaded } = useJsApiLoader({ googleMapsApiKey: GOOGLE_MAPS_KEY });
+  const { isLoaded } = useJsApiLoader({ googleMapsApiKey: GOOGLE_MAPS_KEY, libraries: LIBRARIES });
 
   const fetchMembros = useCallback(async () => {
     const { data } = await supabase
