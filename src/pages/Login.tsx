@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { lovable } from "@/integrations/lovable";
 import ScrollMorphHero from "@/components/ui/scroll-morph-hero";
-import { resolveUserLandingRoute } from "@/lib/resolve-route";
+
 
 export default function Login() {
   const navigate = useNavigate();
@@ -13,7 +13,7 @@ export default function Login() {
   // Auto-redirect when authenticated
   useEffect(() => {
     if (!loading && session && profile) {
-      navigate(resolveUserLandingRoute(profile), { replace: true });
+      navigate("/app/dashboard", { replace: true });
     }
   }, [loading, session, profile, navigate]);
 
