@@ -206,7 +206,24 @@ export default function MapaGCs() {
       ({ error } = await supabase.from("grupos_crescimento").insert(payload));
     }
     if (error) toast.error("Erro ao salvar: " + error.message);
-    else { toast.success(editingId ? "GC atualizado!" : "GC cadastrado!"); setShowForm(false); fetchGcs(); }
+    else {
+      toast.success(editingId ? "GC atualizado!" : "GC cadastrado!");
+      setShowForm(false);
+      await fetchGcs();
+      // If we got coordinates, switch to map and highlight the pin
+      if (lat && lng) {
+        setActiveTab("mapa");
+        // Find the GC by name to get its id for highlighting
+        const { data: found } = await supabase
+          .from("grupos_crescimento")
+          .select("id")
+          .eq("nome", form.nome.trim())
+          .order("criado_em", { ascending: false })
+          .limit(1)
+          .single();
+        if (found) setSelectedMarker(found.id);
+      }
+    }
     setSaving(false);
   };
 
@@ -343,57 +360,58 @@ export default function MapaGCs() {
             <div className="flex justify-center py-12">
               <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
             </div>
-          ) : gcsWithCoords.length === 0 ? (
-            <Card className="border-border">
-              <CardContent className="py-12 text-center text-muted-foreground">
-                Nenhum GC com localização cadastrada. Preencha o endereço ao cadastrar um GC para exibi-lo no mapa.
-              </CardContent>
-            </Card>
           ) : (
-            <div className="rounded-lg overflow-hidden border border-border">
-              <GoogleMap mapContainerStyle={mapContainerStyle} center={mapCenter} zoom={13}>
-                {gcsWithCoords.map(gc => (
-                  <Marker
-                    key={gc.id}
-                    position={{ lat: gc.latitude!, lng: gc.longitude! }}
-                    icon={{
-                      path: google.maps.SymbolPath.CIRCLE,
-                      scale: 12,
-                      fillColor: markerColors[gc.status_cor] || markerColors.verde,
-                      fillOpacity: 1,
-                      strokeWeight: 2,
-                      strokeColor: "#ffffff",
-                    }}
-                    onClick={() => setSelectedMarker(gc.id)}
-                  />
-                ))}
-                {selectedMarker && (() => {
-                  const gc = gcsWithCoords.find(g => g.id === selectedMarker);
-                  if (!gc) return null;
-                  const scfg = statusGCConfig[gc.status_gc] || statusGCConfig.ativo;
-                  return (
-                    <InfoWindow
+            <div className="space-y-2">
+              {gcsWithCoords.length === 0 && (
+                <p className="text-sm text-muted-foreground text-center py-2">
+                  Nenhum GC com localização cadastrada. Preencha o endereço ao cadastrar um GC para exibi-lo no mapa.
+                </p>
+              )}
+              <div className="rounded-lg overflow-hidden border border-border">
+                <GoogleMap mapContainerStyle={mapContainerStyle} center={mapCenter} zoom={13}>
+                  {gcsWithCoords.map(gc => (
+                    <Marker
+                      key={gc.id}
                       position={{ lat: gc.latitude!, lng: gc.longitude! }}
-                      onCloseClick={() => setSelectedMarker(null)}
-                    >
-                      <div style={{ minWidth: 180, fontFamily: "Inter, sans-serif" }}>
-                        <h3 style={{ fontWeight: 600, fontSize: 14, marginBottom: 4 }}>{gc.nome}</h3>
-                        <p style={{ fontSize: 12, color: "#666", margin: "2px 0" }}>👤 {gc.lider_nome}</p>
-                        <p style={{ fontSize: 12, color: "#666", margin: "2px 0" }}>👥 {gc.total_membros}/{gc.capacidade} membros</p>
-                        {gc.dia_encontro?.length > 0 && (
-                          <p style={{ fontSize: 12, color: "#666", margin: "2px 0" }}>📅 {gc.dia_encontro.join(", ")}{gc.horario ? ` às ${gc.horario}` : ""}</p>
-                        )}
-                        {gc.bairro && <p style={{ fontSize: 12, color: "#666", margin: "2px 0" }}>📍 {gc.bairro}</p>}
-                        <span style={{
-                          display: "inline-block", marginTop: 4, fontSize: 10, padding: "2px 6px",
-                          borderRadius: 4, backgroundColor: gc.status_cor === "verde" ? "#22c55e" : gc.status_cor === "amarelo" ? "#eab308" : "#ef4444",
-                          color: "white", fontWeight: 600
-                        }}>{scfg.label}</span>
-                      </div>
-                    </InfoWindow>
-                  );
-                })()}
-              </GoogleMap>
+                      icon={{
+                        path: google.maps.SymbolPath.CIRCLE,
+                        scale: 12,
+                        fillColor: markerColors[gc.status_cor] || markerColors.verde,
+                        fillOpacity: 1,
+                        strokeWeight: 2,
+                        strokeColor: "#ffffff",
+                      }}
+                      onClick={() => setSelectedMarker(gc.id)}
+                    />
+                  ))}
+                  {selectedMarker && (() => {
+                    const gc = gcsWithCoords.find(g => g.id === selectedMarker);
+                    if (!gc) return null;
+                    const scfg = statusGCConfig[gc.status_gc] || statusGCConfig.ativo;
+                    return (
+                      <InfoWindow
+                        position={{ lat: gc.latitude!, lng: gc.longitude! }}
+                        onCloseClick={() => setSelectedMarker(null)}
+                      >
+                        <div style={{ minWidth: 180, fontFamily: "Inter, sans-serif" }}>
+                          <h3 style={{ fontWeight: 600, fontSize: 14, marginBottom: 4 }}>{gc.nome}</h3>
+                          <p style={{ fontSize: 12, color: "#666", margin: "2px 0" }}>👤 {gc.lider_nome}</p>
+                          <p style={{ fontSize: 12, color: "#666", margin: "2px 0" }}>👥 {gc.total_membros}/{gc.capacidade} membros</p>
+                          {gc.dia_encontro?.length > 0 && (
+                            <p style={{ fontSize: 12, color: "#666", margin: "2px 0" }}>📅 {gc.dia_encontro.join(", ")}{gc.horario ? ` às ${gc.horario}` : ""}</p>
+                          )}
+                          {gc.bairro && <p style={{ fontSize: 12, color: "#666", margin: "2px 0" }}>📍 {gc.bairro}</p>}
+                          <span style={{
+                            display: "inline-block", marginTop: 4, fontSize: 10, padding: "2px 6px",
+                            borderRadius: 4, backgroundColor: gc.status_cor === "verde" ? "#22c55e" : gc.status_cor === "amarelo" ? "#eab308" : "#ef4444",
+                            color: "white", fontWeight: 600
+                          }}>{scfg.label}</span>
+                        </div>
+                      </InfoWindow>
+                    );
+                  })()}
+                </GoogleMap>
+              </div>
             </div>
           )}
         </TabsContent>
