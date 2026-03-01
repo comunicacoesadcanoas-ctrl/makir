@@ -274,34 +274,49 @@ export default function MapaGCs() {
   // ── Main Map ──
   useEffect(() => {
     if (activeTab !== "mapa" || !mapboxToken || !mapContainerRef.current) return;
-    if (mapRef.current) return; // already initialized
+
+    // If already initialized, just resize
+    if (mapRef.current) {
+      setTimeout(() => mapRef.current?.resize(), 100);
+      return;
+    }
 
     mapboxgl.accessToken = mapboxToken;
     setMapError(null);
-    try {
-      const map = new mapboxgl.Map({
-        container: mapContainerRef.current,
-        style: "mapbox://styles/mapbox/dark-v11",
-        center: defaultCenter,
-        zoom: 13,
-      });
-      map.addControl(new (mapboxgl.NavigationControl as any)(), "top-right");
 
-      map.on("error", (e: any) => {
-        const msg = e?.error?.message || e?.message || "";
-        if (msg.includes("401") || msg.includes("403") || msg.includes("access token") || msg.includes("Not Authorized")) {
-          setMapError("Token Mapbox inválido ou expirado. Verifique e tente novamente.");
-          map.remove();
-          mapRef.current = null;
-        }
-      });
+    // Delay init slightly so the tab container is fully visible
+    const initTimeout = setTimeout(() => {
+      if (!mapContainerRef.current) return;
+      try {
+        const map = new mapboxgl.Map({
+          container: mapContainerRef.current,
+          style: "mapbox://styles/mapbox/dark-v11",
+          center: defaultCenter,
+          zoom: 13,
+        });
+        map.addControl(new (mapboxgl.NavigationControl as any)(), "top-right");
 
-      mapRef.current = map;
-    } catch (err: any) {
-      setMapError("Erro ao inicializar o mapa: " + (err?.message || "desconhecido"));
-    }
+        map.on("load", () => {
+          setTimeout(() => map.resize(), 50);
+        });
+
+        map.on("error", (e: any) => {
+          const msg = e?.error?.message || e?.message || "";
+          if (msg.includes("401") || msg.includes("403") || msg.includes("access token") || msg.includes("Not Authorized")) {
+            setMapError("Token Mapbox inválido ou expirado. Verifique e tente novamente.");
+            map.remove();
+            mapRef.current = null;
+          }
+        });
+
+        mapRef.current = map;
+      } catch (err: any) {
+        setMapError("Erro ao inicializar o mapa: " + (err?.message || "desconhecido"));
+      }
+    }, 150);
 
     return () => {
+      clearTimeout(initTimeout);
       markersRef.current.forEach(m => m.remove());
       markersRef.current.clear();
       mapRef.current?.remove();
@@ -570,7 +585,7 @@ export default function MapaGCs() {
         </TabsContent>
 
         {/* MAP TAB */}
-        <TabsContent value="mapa" className="mt-3">
+        <TabsContent value="mapa" className="mt-3" forceMount style={{ display: activeTab === "mapa" ? "block" : "none" }}>
           {!mapboxToken ? (
             <Card className="border-border max-w-md mx-auto">
               <CardContent className="py-8 space-y-4 text-center">
@@ -592,9 +607,9 @@ export default function MapaGCs() {
               </CardContent>
             </Card>
           ) : (
-            <div className="relative rounded-lg overflow-hidden border border-border" style={{ height: "560px" }}>
+            <div className="relative rounded-lg overflow-hidden border border-border" style={{ height: "560px", width: "100%" }}>
               {/* Mapbox container */}
-              <div ref={mapContainerRef} className="absolute inset-0" />
+              <div ref={mapContainerRef} style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, width: "100%", height: "100%" }} />
 
               {/* Floating sidebar */}
               <div
