@@ -11,9 +11,6 @@ import { DefaultRedirect } from "./components/DefaultRedirect";
 
 // Lazy loaded pages (code splitting)
 const Login = lazy(() => import("./pages/Login"));
-const SelecionarAcesso = lazy(() => import("./pages/SelecionarAcesso"));
-const AguardandoAprovacao = lazy(() => import("./pages/AguardandoAprovacao"));
-const AcessoNegado = lazy(() => import("./pages/AcessoNegado"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Visitantes = lazy(() => import("./pages/Visitantes"));
 const Discipulos = lazy(() => import("./pages/Discipulos"));
