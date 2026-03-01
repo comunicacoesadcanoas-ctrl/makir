@@ -14,7 +14,7 @@ import { toast } from "sonner";
 import { GoogleMap, useJsApiLoader, Marker, InfoWindow } from "@react-google-maps/api";
 import GCDetailDialog from "@/components/GCDetailDialog";
 
-const GOOGLE_MAPS_KEY = "AIzaSyBsRrFlYOT5_NClqnQYnw1rv2Zr60slr9Q";
+const GOOGLE_MAPS_KEY = import.meta.env.VITE_GOOGLE_MAPS_KEY || "";
 
 type StatusGC = "ativo" | "em_formacao" | "inativo";
 

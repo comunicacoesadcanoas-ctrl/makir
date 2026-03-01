@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/chart";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from "recharts";
 
-const GOOGLE_MAPS_KEY = "AIzaSyBsRrFlYOT5_NClqnQYnw1rv2Zr60slr9Q";
+const GOOGLE_MAPS_KEY = import.meta.env.VITE_GOOGLE_MAPS_KEY || "";
 
 interface GC {
   id: string;
