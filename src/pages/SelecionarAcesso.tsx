@@ -83,31 +83,34 @@ export default function SelecionarAcesso() {
 
   // --- Handlers ---
   const handleJaTenhoAcesso = async () => {
+    if (!user) {
+      toast.error("Sessão não carregada. Tente recarregar a página.");
+      return;
+    }
     setChecking(true);
     try {
-      // Force re-fetch profile from DB
-      await refreshProfile();
-      // After refresh, the component will re-render.
-      // If profile is now approved, the guard above will redirect.
-      // If still null, the user doesn't actually have access.
-      const { data } = await supabase
+      // Direct query — doesn't depend on profile state
+      const { data, error } = await supabase
         .from("users")
-        .select("status, tipo_acesso")
-        .eq("id", user!.id)
+        .select("*")
+        .eq("id", user.id)
         .maybeSingle();
 
+      if (error) throw error;
+
       if (data?.status === "aprovado") {
+        // Force profile into context then navigate
+        await refreshProfile();
         navigate(resolveUserLandingRoute(data as any), { replace: true });
       } else if (data?.status === "pendente") {
         navigate("/aguardando-aprovacao", { replace: true });
-      } else if (data) {
+      } else if (data?.status === "rejeitado") {
         toast.error("Seu acesso foi negado. Entre em contato com o administrador.");
       } else {
         toast.error("Nenhum cadastro encontrado para este email. Solicite acesso primeiro.");
-        setStep("choose");
       }
     } catch (e) {
-      console.error(e);
+      console.error("Erro ao verificar acesso:", e);
       toast.error("Erro ao verificar acesso. Tente novamente.");
     } finally {
       setChecking(false);
