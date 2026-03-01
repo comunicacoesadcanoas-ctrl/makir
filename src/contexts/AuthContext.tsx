@@ -38,6 +38,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .eq("id", userId)
         .maybeSingle();
       if (error) throw error;
+
+      // Auto-create profile if none exists
+      if (!data) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: newProfile, error: insertError } = await supabase
+            .from("users")
+            .insert({
+              id: user.id,
+              email: user.email || "",
+              nome: user.user_metadata?.full_name || user.email || "",
+              foto_url: user.user_metadata?.avatar_url || null,
+              tipo_acesso: "recepcao" as const,
+            })
+            .select("*")
+            .single();
+          if (!insertError && newProfile) {
+            setProfile(newProfile);
+            return newProfile;
+          }
+        }
+      }
+
       setProfile(data);
       return data;
     } catch (e) {
