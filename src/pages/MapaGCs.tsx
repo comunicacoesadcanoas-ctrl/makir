@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { usePermissions } from "@/hooks/usePermissions";
 import { Card, CardContent } from "@/components/ui/card";
@@ -11,10 +11,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MapPin, Plus, Users, Clock, Phone, Pencil, Trash2, Search, Map, LayoutGrid, Eye } from "lucide-react";
 import { toast } from "sonner";
-import { GoogleMap, useJsApiLoader, Marker, InfoWindow } from "@react-google-maps/api";
+import { GoogleMap, useJsApiLoader, Marker, InfoWindow, Autocomplete } from "@react-google-maps/api";
 import GCDetailDialog from "@/components/GCDetailDialog";
 
 const GOOGLE_MAPS_KEY = import.meta.env.VITE_GOOGLE_MAPS_KEY || "";
+const LIBRARIES: ("places")[] = ["places"];
 
 type StatusGC = "ativo" | "em_formacao" | "inativo";
 
@@ -74,6 +75,8 @@ const emptyForm = {
   status_gc: "ativo" as StatusGC,
   observacoes: "",
   data_inicio: new Date().toISOString().slice(0, 10),
+  formLat: null as number | null,
+  formLng: null as number | null,
 };
 
 const mapContainerStyle = { width: "100%", height: "500px", borderRadius: "0.5rem" };
@@ -92,7 +95,8 @@ export default function MapaGCs() {
   const [selectedMarker, setSelectedMarker] = useState<string | null>(null);
   const [detailGC, setDetailGC] = useState<GC | null>(null);
 
-  const { isLoaded } = useJsApiLoader({ googleMapsApiKey: GOOGLE_MAPS_KEY });
+  const { isLoaded } = useJsApiLoader({ googleMapsApiKey: GOOGLE_MAPS_KEY, libraries: LIBRARIES });
+  const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
 
   const fetchGcs = useCallback(async () => {
     setLoading(true);
@@ -118,6 +122,7 @@ export default function MapaGCs() {
       capacidade: String(gc.capacidade), total_membros: String(gc.total_membros),
       telefone_contato: gc.telefone_contato || "", status_gc: gc.status_gc,
       observacoes: gc.observacoes || "", data_inicio: gc.data_inicio || new Date().toISOString().slice(0, 10),
+      formLat: gc.latitude, formLng: gc.longitude,
     });
     setShowForm(true);
   };
@@ -170,11 +175,11 @@ export default function MapaGCs() {
     const total = parseInt(form.total_membros) || 0;
     const cap = parseInt(form.capacidade) || 20;
 
-    // Geocode the address
-    let lat: number | null = null;
-    let lng: number | null = null;
-    const fullAddress = [form.endereco, form.bairro, "Canoas, RS"].filter(Boolean).join(", ");
-    if (fullAddress) {
+    // Use form coordinates (from autocomplete or map click), fallback to geocoding
+    let lat: number | null = form.formLat;
+    let lng: number | null = form.formLng;
+    if (!lat && !lng && form.endereco.trim()) {
+      const fullAddress = [form.endereco, form.bairro, "Canoas, RS"].filter(Boolean).join(", ");
       const coords = await geocodeAddress(fullAddress);
       if (coords) { lat = coords.lat; lng = coords.lng; }
     }
@@ -439,8 +444,90 @@ export default function MapaGCs() {
               </div>
               <div className="space-y-1 sm:col-span-2">
                 <label className="text-sm font-medium text-foreground">Endereço (usado para o mapa)</label>
-                <Input value={form.endereco} onChange={e => setForm(f => ({ ...f, endereco: e.target.value }))} placeholder="Rua, número..." />
+                {isLoaded ? (
+                  <Autocomplete
+                    onLoad={ac => { autocompleteRef.current = ac; }}
+                    onPlaceChanged={() => {
+                      const place = autocompleteRef.current?.getPlace();
+                      if (place?.geometry?.location) {
+                        const lat = place.geometry.location.lat();
+                        const lng = place.geometry.location.lng();
+                        const addr = place.formatted_address || place.name || "";
+                        // Try to extract bairro from address components
+                        const bairroComp = place.address_components?.find(c =>
+                          c.types.includes("sublocality_level_1") || c.types.includes("neighborhood")
+                        );
+                        setForm(f => ({
+                          ...f,
+                          endereco: addr,
+                          formLat: lat,
+                          formLng: lng,
+                          ...(bairroComp ? { bairro: bairroComp.long_name } : {}),
+                        }));
+                        toast.success("Localização definida pelo endereço!");
+                      }
+                    }}
+                    options={{
+                      componentRestrictions: { country: "br" },
+                      fields: ["geometry", "formatted_address", "name", "address_components"],
+                    }}
+                  >
+                    <Input
+                      value={form.endereco}
+                      onChange={e => setForm(f => ({ ...f, endereco: e.target.value }))}
+                      placeholder="Digite o endereço e selecione da lista..."
+                    />
+                  </Autocomplete>
+                ) : (
+                  <Input value={form.endereco} onChange={e => setForm(f => ({ ...f, endereco: e.target.value }))} placeholder="Rua, número..." />
+                )}
+                {form.formLat && form.formLng && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    📍 Coordenadas: {form.formLat.toFixed(5)}, {form.formLng.toFixed(5)}
+                  </p>
+                )}
               </div>
+
+              {/* Mini map to click and set pin */}
+              {isLoaded && (
+                <div className="sm:col-span-2 space-y-1">
+                  <label className="text-sm font-medium text-foreground">Ou clique no mapa para posicionar o pin</label>
+                  <div className="rounded-lg overflow-hidden border border-border">
+                    <GoogleMap
+                      mapContainerStyle={{ width: "100%", height: "220px", borderRadius: "0.5rem" }}
+                      center={
+                        form.formLat && form.formLng
+                          ? { lat: form.formLat, lng: form.formLng }
+                          : defaultCenter
+                      }
+                      zoom={form.formLat ? 16 : 13}
+                      onClick={(e) => {
+                        const lat = e.latLng?.lat();
+                        const lng = e.latLng?.lng();
+                        if (lat && lng) {
+                          setForm(f => ({ ...f, formLat: lat, formLng: lng }));
+                          toast.success("Pin posicionado no mapa!");
+                        }
+                      }}
+                      options={{ streetViewControl: false, mapTypeControl: false, fullscreenControl: false }}
+                    >
+                      {form.formLat && form.formLng && (
+                        <Marker
+                          position={{ lat: form.formLat, lng: form.formLng }}
+                          draggable
+                          onDragEnd={(e) => {
+                            const lat = e.latLng?.lat();
+                            const lng = e.latLng?.lng();
+                            if (lat && lng) {
+                              setForm(f => ({ ...f, formLat: lat, formLng: lng }));
+                            }
+                          }}
+                        />
+                      )}
+                    </GoogleMap>
+                  </div>
+                </div>
+              )}
               <div className="space-y-1">
                 <label className="text-sm font-medium text-foreground">Bairro</label>
                 <Input value={form.bairro} onChange={e => setForm(f => ({ ...f, bairro: e.target.value }))} />
