@@ -41,6 +41,8 @@ interface GC {
   status_cor: string;
   observacoes: string | null;
   data_inicio: string | null;
+  tipo_gc: string | null;
+  faixa_etaria: string | null;
 }
 
 interface Membro {
@@ -71,6 +73,19 @@ const markerColors: Record<string, string> = {
   verde: "#22c55e",
   amarelo: "#eab308",
   vermelho: "#ef4444",
+};
+
+const tipoGCLabels: Record<string, string> = {
+  guris: "Guris",
+  gurias: "Gurias",
+  casados: "Casados",
+  misto: "Misto",
+};
+
+const faixaEtariaLabels: Record<string, string> = {
+  adolescente: "Adolescente",
+  jovens: "Jovens",
+  adulto: "Adulto",
 };
 
 export default function GCDetailDialog({ open, onOpenChange, gc, onUpdate }: Props) {
@@ -255,6 +270,8 @@ export default function GCDetailDialog({ open, onOpenChange, gc, onUpdate }: Pro
                 <div><span className="text-muted-foreground">Encontros:</span> {gc.dia_encontro.join(", ")}{gc.horario ? ` às ${gc.horario}` : ""}</div>
               )}
               <div><span className="text-muted-foreground">Membros:</span> {gc.total_membros}/{gc.capacidade}</div>
+              {gc.tipo_gc && <div><span className="text-muted-foreground">Tipo:</span> {tipoGCLabels[gc.tipo_gc] || gc.tipo_gc}</div>}
+              {gc.faixa_etaria && <div><span className="text-muted-foreground">Faixa Etária:</span> {faixaEtariaLabels[gc.faixa_etaria] || gc.faixa_etaria}</div>}
               {gc.data_inicio && <div><span className="text-muted-foreground">Início:</span> {new Date(gc.data_inicio).toLocaleDateString("pt-BR")}</div>}
               {gc.observacoes && <div className="col-span-2"><span className="text-muted-foreground">Obs:</span> {gc.observacoes}</div>}
             </div>
