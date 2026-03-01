@@ -120,6 +120,7 @@ export default function MapaGCs() {
   // Mapbox state
   const [mapboxToken, setMapboxToken] = useState(getStoredToken);
   const [tokenInput, setTokenInput] = useState("");
+  const [mapError, setMapError] = useState<string | null>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<globalThis.Map<string, mapboxgl.Marker>>(new globalThis.Map());
@@ -276,19 +277,34 @@ export default function MapaGCs() {
     if (mapRef.current) return; // already initialized
 
     mapboxgl.accessToken = mapboxToken;
-    const map = new mapboxgl.Map({
-      container: mapContainerRef.current,
-      style: "mapbox://styles/mapbox/dark-v11",
-      center: defaultCenter,
-      zoom: 13,
-    });
-    map.addControl(new (mapboxgl.NavigationControl as any)(), "top-right");
-    mapRef.current = map;
+    setMapError(null);
+    try {
+      const map = new mapboxgl.Map({
+        container: mapContainerRef.current,
+        style: "mapbox://styles/mapbox/dark-v11",
+        center: defaultCenter,
+        zoom: 13,
+      });
+      map.addControl(new (mapboxgl.NavigationControl as any)(), "top-right");
+
+      map.on("error", (e: any) => {
+        const msg = e?.error?.message || e?.message || "";
+        if (msg.includes("401") || msg.includes("403") || msg.includes("access token") || msg.includes("Not Authorized")) {
+          setMapError("Token Mapbox inválido ou expirado. Verifique e tente novamente.");
+          map.remove();
+          mapRef.current = null;
+        }
+      });
+
+      mapRef.current = map;
+    } catch (err: any) {
+      setMapError("Erro ao inicializar o mapa: " + (err?.message || "desconhecido"));
+    }
 
     return () => {
       markersRef.current.forEach(m => m.remove());
       markersRef.current.clear();
-      map.remove();
+      mapRef.current?.remove();
       mapRef.current = null;
     };
   }, [activeTab, mapboxToken]);
@@ -416,7 +432,19 @@ export default function MapaGCs() {
     if (!tokenInput.trim()) { toast.error("Insira um token válido"); return; }
     localStorage.setItem(MAPBOX_TOKEN_KEY, tokenInput.trim());
     setMapboxToken(tokenInput.trim());
+    setMapError(null);
     toast.success("Token Mapbox salvo!");
+  };
+
+  const handleChangeToken = () => {
+    localStorage.removeItem(MAPBOX_TOKEN_KEY);
+    mapRef.current?.remove();
+    mapRef.current = null;
+    markersRef.current.forEach(m => m.remove());
+    markersRef.current.clear();
+    setMapboxToken("");
+    setMapError(null);
+    setTokenInput("");
   };
 
   // Sidebar filtered GCs
@@ -637,8 +665,36 @@ export default function MapaGCs() {
                 )}
               </div>
 
+              {/* Map error overlay */}
+              {mapError && (
+                <div className="absolute inset-0 flex items-center justify-center z-20 bg-background/80 backdrop-blur-sm">
+                  <Card className="border-destructive/30 max-w-sm mx-4">
+                    <CardContent className="py-6 space-y-4 text-center">
+                      <div className="h-10 w-10 rounded-full bg-destructive/10 flex items-center justify-center mx-auto">
+                        <MapPin className="h-5 w-5 text-destructive" />
+                      </div>
+                      <p className="text-sm text-foreground font-medium">{mapError}</p>
+                      <Button variant="destructive" size="sm" onClick={handleChangeToken}>
+                        Trocar Token
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+
+              {/* Change token button */}
+              <div className="absolute top-3 right-14 z-10">
+                <button
+                  onClick={handleChangeToken}
+                  title="Trocar token Mapbox"
+                  className="h-8 px-2.5 rounded-lg bg-[#0f1117]/80 backdrop-blur-xl border border-white/10 text-[10px] text-white/60 hover:text-white hover:border-white/20 transition-colors"
+                >
+                  Trocar token
+                </button>
+              </div>
+
               {/* Empty state */}
-              {gcsWithCoords.length === 0 && (
+              {!mapError && gcsWithCoords.length === 0 && (
                 <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
                   <div className="bg-[#0f1117]/80 backdrop-blur-xl border border-white/10 rounded-xl px-6 py-4 text-center">
                     <MapPin className="h-8 w-8 mx-auto text-[#00e5ff] mb-2" />
