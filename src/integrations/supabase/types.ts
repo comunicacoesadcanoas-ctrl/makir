@@ -140,6 +140,7 @@ export type Database = {
           data_inicio: string | null
           dia_encontro: string[] | null
           endereco: string | null
+          faixa_etaria: string | null
           horario: string | null
           id: string
           latitude: number | null
@@ -152,6 +153,7 @@ export type Database = {
           status_cor: Database["public"]["Enums"]["status_cor_enum"]
           status_gc: Database["public"]["Enums"]["status_gc_enum"]
           telefone_contato: string | null
+          tipo_gc: string | null
           total_membros: number | null
           zona: string | null
         }
@@ -162,6 +164,7 @@ export type Database = {
           data_inicio?: string | null
           dia_encontro?: string[] | null
           endereco?: string | null
+          faixa_etaria?: string | null
           horario?: string | null
           id?: string
           latitude?: number | null
@@ -174,6 +177,7 @@ export type Database = {
           status_cor?: Database["public"]["Enums"]["status_cor_enum"]
           status_gc?: Database["public"]["Enums"]["status_gc_enum"]
           telefone_contato?: string | null
+          tipo_gc?: string | null
           total_membros?: number | null
           zona?: string | null
         }
@@ -184,6 +188,7 @@ export type Database = {
           data_inicio?: string | null
           dia_encontro?: string[] | null
           endereco?: string | null
+          faixa_etaria?: string | null
           horario?: string | null
           id?: string
           latitude?: number | null
@@ -196,6 +201,7 @@ export type Database = {
           status_cor?: Database["public"]["Enums"]["status_cor_enum"]
           status_gc?: Database["public"]["Enums"]["status_gc_enum"]
           telefone_contato?: string | null
+          tipo_gc?: string | null
           total_membros?: number | null
           zona?: string | null
         }

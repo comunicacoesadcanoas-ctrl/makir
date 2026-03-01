@@ -20,6 +20,9 @@ import GCDetailDialog from "@/components/GCDetailDialog";
 
 type StatusGC = "ativo" | "em_formacao" | "inativo";
 
+type TipoGC = "guris" | "gurias" | "casados" | "misto";
+type FaixaEtaria = "adolescente" | "jovens" | "adulto";
+
 interface GC {
   id: string;
   nome: string;
@@ -39,6 +42,8 @@ interface GC {
   status_cor: string;
   observacoes: string | null;
   data_inicio: string | null;
+  tipo_gc: TipoGC | null;
+  faixa_etaria: FaixaEtaria | null;
 }
 
 const diasSemana = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"];
@@ -61,6 +66,27 @@ const markerColors: Record<string, string> = {
   vermelho: "#ef4444",
 };
 
+// Pin colors by tipo_gc
+const tipoGCPinColors: Record<string, string> = {
+  guris: "#3b82f6",    // blue
+  gurias: "#ec4899",   // pink
+  casados: "#22c55e",  // green
+  misto: "#a855f7",    // purple
+};
+
+const tipoGCLabels: Record<string, string> = {
+  guris: "Guris",
+  gurias: "Gurias",
+  casados: "Casados",
+  misto: "Misto",
+};
+
+const faixaEtariaLabels: Record<string, string> = {
+  adolescente: "Adolescente",
+  jovens: "Jovens",
+  adulto: "Adulto",
+};
+
 const emptyForm = {
   nome: "",
   lider_nome: "",
@@ -74,6 +100,8 @@ const emptyForm = {
   total_membros: "0",
   telefone_contato: "",
   status_gc: "ativo" as StatusGC,
+  tipo_gc: "misto" as TipoGC,
+  faixa_etaria: "adulto" as FaixaEtaria,
   observacoes: "",
   data_inicio: new Date().toISOString().slice(0, 10),
   formLat: null as number | null,
@@ -154,6 +182,8 @@ export default function MapaGCs() {
       dia_encontro: gc.dia_encontro || [], horario: gc.horario || "",
       capacidade: String(gc.capacidade), total_membros: String(gc.total_membros),
       telefone_contato: gc.telefone_contato || "", status_gc: gc.status_gc,
+      tipo_gc: (gc.tipo_gc || "misto") as TipoGC,
+      faixa_etaria: (gc.faixa_etaria || "adulto") as FaixaEtaria,
       observacoes: gc.observacoes || "", data_inicio: gc.data_inicio || new Date().toISOString().slice(0, 10),
       formLat: gc.latitude, formLng: gc.longitude,
     });
@@ -235,6 +265,8 @@ export default function MapaGCs() {
       status_cor: computeStatusCor(form.status_gc, total, cap) as any,
       observacoes: form.observacoes.trim() || null,
       data_inicio: form.data_inicio || null,
+      tipo_gc: form.tipo_gc,
+      faixa_etaria: form.faixa_etaria,
     };
 
     let error;
@@ -336,7 +368,7 @@ export default function MapaGCs() {
       markersRef.current.clear();
 
       gcsWithCoords.forEach(gc => {
-        const color = markerColors[gc.status_cor] || markerColors.verde;
+        const color = tipoGCPinColors[gc.tipo_gc || "misto"] || tipoGCPinColors.misto;
         const el = createGlowMarker(color);
         const scfg = statusGCConfig[gc.status_gc] || statusGCConfig.ativo;
 
@@ -356,6 +388,7 @@ export default function MapaGCs() {
                 <p style="font-size:12px;color:#aaa;margin:2px 0">👥 ${gc.total_membros}/${gc.capacidade} membros</p>
                 ${gc.dia_encontro?.length ? `<p style="font-size:12px;color:#aaa;margin:2px 0">📅 ${gc.dia_encontro.join(", ")}${gc.horario ? ` às ${gc.horario}` : ""}</p>` : ""}
                 ${gc.bairro ? `<p style="font-size:12px;color:#aaa;margin:2px 0">📍 ${gc.bairro}</p>` : ""}
+                ${gc.tipo_gc ? `<p style="font-size:12px;color:#aaa;margin:2px 0">🏷 ${tipoGCLabels[gc.tipo_gc] || gc.tipo_gc}${gc.faixa_etaria ? ` • ${faixaEtariaLabels[gc.faixa_etaria] || gc.faixa_etaria}` : ""}</p>` : ""}
                 <span style="display:inline-block;margin-top:4px;font-size:10px;padding:2px 8px;border-radius:4px;background:${color};color:#fff;font-weight:600">${scfg.label}</span>
               </div>
             `)
@@ -641,7 +674,7 @@ export default function MapaGCs() {
                         <p className="text-xs text-white/30 text-center py-4">Nenhum GC localizado</p>
                       ) : (
                         sidebarGCs.map(gc => {
-                          const color = markerColors[gc.status_cor] || markerColors.verde;
+                          const color = tipoGCPinColors[gc.tipo_gc || "misto"] || tipoGCPinColors.misto;
                           const isActive = selectedMarker === gc.id;
                           return (
                             <button
@@ -813,6 +846,32 @@ export default function MapaGCs() {
                     <SelectItem value="ativo">Ativo</SelectItem>
                     <SelectItem value="em_formacao">Em formação</SelectItem>
                     <SelectItem value="inativo">Inativo</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-foreground">Tipo de GC</label>
+                <Select value={form.tipo_gc} onValueChange={v => setForm(f => ({ ...f, tipo_gc: v as TipoGC }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="guris">Guris</SelectItem>
+                    <SelectItem value="gurias">Gurias</SelectItem>
+                    <SelectItem value="casados">Casados</SelectItem>
+                    <SelectItem value="misto">Misto</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-foreground">Faixa Etária</label>
+                <Select value={form.faixa_etaria} onValueChange={v => setForm(f => ({ ...f, faixa_etaria: v as FaixaEtaria }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="adolescente">Adolescente</SelectItem>
+                    <SelectItem value="jovens">Jovens</SelectItem>
+                    <SelectItem value="adulto">Adulto</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
