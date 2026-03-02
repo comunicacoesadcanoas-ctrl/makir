@@ -5,12 +5,14 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { BookOpen, Search, Download } from "lucide-react";
+import { BookOpen, Search, Download, Plus, UserCog } from "lucide-react";
 import { ExportDialog } from "@/components/ExportDialog";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { DiscipuloDetailDialog } from "@/components/DiscipuloDetailDialog";
 import { PaginationControls, usePagination } from "@/components/Pagination";
+import { NovoDiscipuloDialog } from "@/components/NovoDiscipuloDialog";
+import { NovoDiscipuladorDialog } from "@/components/NovoDiscipuladorDialog";
 
 interface DiscipuloWithVisitante {
   id: string;
@@ -53,6 +55,8 @@ export default function Discipulos() {
   const [search, setSearch] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [exportOpen, setExportOpen] = useState(false);
+  const [novoDiscipuloOpen, setNovoDiscipuloOpen] = useState(false);
+  const [novoDiscipuladorOpen, setNovoDiscipuladorOpen] = useState(false);
   const [page, setPage] = useState(1);
 
   const fetchDiscipulos = useCallback(async () => {
@@ -91,9 +95,17 @@ export default function Discipulos() {
           <h1 className="text-2xl font-bold text-foreground">Discípulos</h1>
           <Badge variant="secondary" className="text-xs">{discipulos.length}</Badge>
         </div>
-        <Button variant="outline" size="sm" onClick={() => setExportOpen(true)} className="gap-1.5">
-          <Download className="h-4 w-4" /> Exportar
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => setExportOpen(true)} className="gap-1.5">
+            <Download className="h-4 w-4" /> Exportar
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setNovoDiscipuladorOpen(true)} className="gap-1.5">
+            <UserCog className="h-4 w-4" /> Novo Discipulador
+          </Button>
+          <Button size="sm" onClick={() => setNovoDiscipuloOpen(true)} className="gap-1.5">
+            <Plus className="h-4 w-4" /> Novo Discípulo
+          </Button>
+        </div>
       </div>
 
       <div className="relative">
@@ -193,6 +205,9 @@ export default function Discipulos() {
           Status: d.status_cor,
         })}
       />
+
+      <NovoDiscipuloDialog open={novoDiscipuloOpen} onOpenChange={setNovoDiscipuloOpen} onSuccess={fetchDiscipulos} />
+      <NovoDiscipuladorDialog open={novoDiscipuladorOpen} onOpenChange={setNovoDiscipuladorOpen} onSuccess={fetchDiscipulos} />
     </div>
   );
 }
