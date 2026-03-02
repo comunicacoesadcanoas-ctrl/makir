@@ -12,6 +12,7 @@ import { DefaultRedirect } from "./components/DefaultRedirect";
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Visitantes = lazy(() => import("./pages/Visitantes"));
 const Discipulos = lazy(() => import("./pages/Discipulos"));
+const Discipuladores = lazy(() => import("./pages/Discipuladores"));
 const Relatorios = lazy(() => import("./pages/Relatorios"));
 const MapaGCs = lazy(() => import("./pages/MapaGCs"));
 const Admin = lazy(() => import("./pages/Admin"));
@@ -57,6 +58,7 @@ const App = () => (
                 <Route path="dashboard" element={<Dashboard />} />
                 <Route path="visitantes" element={<Visitantes />} />
                 <Route path="discipulos" element={<Discipulos />} />
+                <Route path="discipuladores" element={<Discipuladores />} />
                 <Route path="relatorios" element={<Relatorios />} />
                 <Route path="mapa-gcs" element={<MapaGCs />} />
                 <Route path="admin" element={<Admin />} />
