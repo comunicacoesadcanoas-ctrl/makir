@@ -32,6 +32,8 @@ export default function DashboardCongregacao({ congregacaoId: propCongId }: Prop
   const [visitantes, setVisitantes] = useState<any[]>([]);
   const [discipulos, setDiscipulos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showVisitanteDialog, setShowVisitanteDialog] = useState(false);
+  const [showDiscipuloDialog, setShowDiscipuloDialog] = useState(false);
 
   const fetchAll = useCallback(async () => {
     if (!congregacaoId) return;
