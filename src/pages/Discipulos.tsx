@@ -90,7 +90,7 @@ export default function Discipulos() {
 
   const { paginate, totalPages } = usePagination(filtered);
   const paginatedItems = paginate(page);
-  useEffect(() => { setPage(1); }, [search]);
+  useEffect(() => { setPage(1); }, [search, congregacaoFilter]);
 
   return (
     <div className="space-y-4">
