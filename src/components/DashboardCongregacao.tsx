@@ -211,6 +211,9 @@ export default function DashboardCongregacao({ congregacaoId: propCongId }: Prop
           )}
         </TabsContent>
       </Tabs>
+
+      <VisitanteFormDialog open={showVisitanteDialog} onOpenChange={setShowVisitanteDialog} onSuccess={fetchAll} />
+      <NovoDiscipuloDialog open={showDiscipuloDialog} onOpenChange={setShowDiscipuloDialog} onSuccess={fetchAll} />
     </div>
   );
 }
