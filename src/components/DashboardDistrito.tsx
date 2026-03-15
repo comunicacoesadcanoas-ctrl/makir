@@ -31,6 +31,8 @@ export default function DashboardDistrito({ distritoId: propDistritoId }: Props)
   const [visitantes, setVisitantes] = useState<any[]>([]);
   const [discipulos, setDiscipulos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showVisitanteDialog, setShowVisitanteDialog] = useState(false);
+  const [showDiscipuloDialog, setShowDiscipuloDialog] = useState(false);
 
   const fetchAll = useCallback(async () => {
     if (!distritoId) return;
