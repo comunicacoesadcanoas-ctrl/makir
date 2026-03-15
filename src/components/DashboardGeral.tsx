@@ -6,9 +6,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Users, BookOpen, MapPin, GraduationCap, TrendingUp, LayoutDashboard,
-  Printer, ChevronRight, Church
+  Printer, ChevronRight, Church, UserPlus, Plus
 } from "lucide-react";
 import { exportDashboardPDF } from "@/lib/export-utils";
+import { VisitanteFormDialog } from "@/components/VisitanteFormDialog";
+import { NovoDiscipuloDialog } from "@/components/NovoDiscipuloDialog";
 import {
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip
 } from "recharts";
@@ -37,6 +39,8 @@ export default function DashboardGeral() {
   const [discipulos, setDiscipulos] = useState<any[]>([]);
   const [gcs, setGcs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showVisitanteDialog, setShowVisitanteDialog] = useState(false);
+  const [showDiscipuloDialog, setShowDiscipuloDialog] = useState(false);
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
@@ -98,9 +102,17 @@ export default function DashboardGeral() {
           <LayoutDashboard className="h-6 w-6 text-primary" />
           <h1 className="text-2xl font-bold text-foreground">Dashboard Geral</h1>
         </div>
-        <Button variant="outline" size="sm" onClick={exportDashboardPDF} className="gap-1.5 no-print">
-          <Printer className="h-4 w-4" /> Exportar PDF
-        </Button>
+        <div className="flex items-center gap-2 no-print">
+          <Button variant="outline" size="sm" onClick={() => setShowVisitanteDialog(true)} className="gap-1.5">
+            <UserPlus className="h-4 w-4" /> Visitante
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setShowDiscipuloDialog(true)} className="gap-1.5">
+            <Plus className="h-4 w-4" /> Discípulo
+          </Button>
+          <Button variant="outline" size="sm" onClick={exportDashboardPDF} className="gap-1.5">
+            <Printer className="h-4 w-4" /> PDF
+          </Button>
+        </div>
       </div>
 
       {/* Global Stats */}
@@ -170,6 +182,9 @@ export default function DashboardGeral() {
           ))}
         </div>
       </div>
+
+      <VisitanteFormDialog open={showVisitanteDialog} onOpenChange={setShowVisitanteDialog} onSuccess={fetchAll} />
+      <NovoDiscipuloDialog open={showDiscipuloDialog} onOpenChange={setShowDiscipuloDialog} onSuccess={fetchAll} />
     </div>
   );
 }
