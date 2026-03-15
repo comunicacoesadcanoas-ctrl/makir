@@ -229,7 +229,7 @@ export default function Admin() {
                     </Select>
                   )}
 
-                  {(user.tipo_acesso === "lider_congregacao" || user.tipo_acesso === "recepcao" || user.tipo_acesso === "discipulador") && (
+                  {user.tipo_acesso === "lider_congregacao" && (
                     <Select
                       defaultValue={user.congregacao_id || "none"}
                       onValueChange={(val) => updateCongregacaoId(user.id, val === "none" ? null : val)}
