@@ -7,9 +7,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Users, BookOpen, GraduationCap, TrendingUp, ChevronRight,
-  MapPin, ArrowLeft, Church, Printer
+  MapPin, ArrowLeft, Church, Printer, UserPlus, Plus
 } from "lucide-react";
 import { exportDashboardPDF } from "@/lib/export-utils";
+import { VisitanteFormDialog } from "@/components/VisitanteFormDialog";
+import { NovoDiscipuloDialog } from "@/components/NovoDiscipuloDialog";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from "recharts";

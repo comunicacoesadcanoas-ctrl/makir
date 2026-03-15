@@ -9,9 +9,11 @@ import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Users, BookOpen, GraduationCap, TrendingUp, ArrowLeft,
-  MapPin, Clock, UserCheck, AlertTriangle, Printer
+  MapPin, Clock, UserCheck, AlertTriangle, Printer, UserPlus, Plus
 } from "lucide-react";
 import { exportDashboardPDF } from "@/lib/export-utils";
+import { VisitanteFormDialog } from "@/components/VisitanteFormDialog";
+import { NovoDiscipuloDialog } from "@/components/NovoDiscipuloDialog";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from "recharts";
