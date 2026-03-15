@@ -182,6 +182,9 @@ export default function DashboardGeral() {
           ))}
         </div>
       </div>
+
+      <VisitanteFormDialog open={showVisitanteDialog} onOpenChange={setShowVisitanteDialog} onSuccess={fetchAll} />
+      <NovoDiscipuloDialog open={showDiscipuloDialog} onOpenChange={setShowDiscipuloDialog} onSuccess={fetchAll} />
     </div>
   );
 }
