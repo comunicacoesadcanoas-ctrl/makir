@@ -82,9 +82,10 @@ export default function Discipulos() {
   useEffect(() => { fetchDiscipulos(); }, [fetchDiscipulos]);
 
   const filtered = discipulos.filter((d) => {
-    if (!search) return true;
     const nome = d.visitantes?.nome || "";
-    return nome.toLowerCase().includes(search.toLowerCase());
+    const matchSearch = !search || nome.toLowerCase().includes(search.toLowerCase());
+    const matchCong = congregacaoFilter === "all" || (d as any).congregacao_id === congregacaoFilter;
+    return matchSearch && matchCong;
   });
 
   const { paginate, totalPages } = usePagination(filtered);
