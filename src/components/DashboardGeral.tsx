@@ -39,6 +39,8 @@ export default function DashboardGeral() {
   const [discipulos, setDiscipulos] = useState<any[]>([]);
   const [gcs, setGcs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showVisitanteDialog, setShowVisitanteDialog] = useState(false);
+  const [showDiscipuloDialog, setShowDiscipuloDialog] = useState(false);
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
