@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useAllAccessRequests, useResolveAccessRequest } from "@/hooks/useAccessRequests";
 import { AdminDistritosTab } from "@/components/AdminDistritosTab";
 import type { Tables, Database } from "@/integrations/supabase/types";
+import { useCongregacoes } from "@/hooks/useCongregacoes";
 
 type UserRow = Tables<"users">;
 type TipoAcesso = Database["public"]["Enums"]["tipo_acesso_enum"];
@@ -18,12 +19,15 @@ type TipoAcesso = Database["public"]["Enums"]["tipo_acesso_enum"];
 const tipoLabels: Record<TipoAcesso, string> = {
   recepcao: "Recepção",
   discipulador: "Discipulador",
-  rede: "Rede",
+  rede: "Admin",
+  lider_distrito: "Líder Distrito",
+  lider_congregacao: "Líder Congregação",
 };
 
 export default function Admin() {
   const [users, setUsers] = useState<UserRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const { congregacoes, distritos } = useCongregacoes();
 
   const { data: accessRequests = [], isLoading: loadingRequests } = useAllAccessRequests();
   const resolveRequest = useResolveAccessRequest();
@@ -63,6 +67,26 @@ export default function Admin() {
       toast.error("Erro ao alterar tipo de acesso");
     } else {
       toast.success("Tipo de acesso atualizado!");
+      fetchUsers();
+    }
+  };
+
+  const updateDistritoId = async (userId: string, distrito_id: string | null) => {
+    const { error } = await supabase.from("users").update({ distrito_id }).eq("id", userId);
+    if (error) {
+      toast.error("Erro ao atribuir distrito");
+    } else {
+      toast.success("Distrito atribuído!");
+      fetchUsers();
+    }
+  };
+
+  const updateCongregacaoId = async (userId: string, congregacao_id: string | null) => {
+    const { error } = await supabase.from("users").update({ congregacao_id }).eq("id", userId);
+    if (error) {
+      toast.error("Erro ao atribuir congregação");
+    } else {
+      toast.success("Congregação atribuída!");
       fetchUsers();
     }
   };
@@ -137,7 +161,7 @@ export default function Admin() {
       </div>
 
       <Tabs defaultValue="pendentes" className="w-full">
-        <TabsList>
+        <TabsList className="flex-wrap">
           <TabsTrigger value="pendentes" className="gap-2">
             Pendentes
             {pending.length > 0 && (
@@ -182,17 +206,55 @@ export default function Admin() {
           ) : (
             approved.map((user) => (
               <UserCard key={user.id} user={user}>
-                <Select defaultValue={user.tipo_acesso} onValueChange={(val) => updateTipoAcesso(user.id, val as TipoAcesso)}>
-                  <SelectTrigger className="w-[160px] h-8 text-xs"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="recepcao">Recepção</SelectItem>
-                    <SelectItem value="discipulador">Discipulador</SelectItem>
-                    <SelectItem value="rede">Rede</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Button size="sm" variant="outline" onClick={() => revokeUser(user.id)} className="border-destructive text-destructive hover:bg-destructive/10 gap-1">
-                  <X className="h-4 w-4" /> Revogar
-                </Button>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Select defaultValue={user.tipo_acesso} onValueChange={(val) => updateTipoAcesso(user.id, val as TipoAcesso)}>
+                    <SelectTrigger className="w-[160px] h-8 text-xs"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="rede">Admin</SelectItem>
+                      <SelectItem value="lider_distrito">Líder Distrito</SelectItem>
+                      <SelectItem value="lider_congregacao">Líder Congregação</SelectItem>
+                      <SelectItem value="recepcao">Recepção</SelectItem>
+                      <SelectItem value="discipulador">Discipulador</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  {user.tipo_acesso === "lider_distrito" && (
+                    <Select
+                      defaultValue={user.distrito_id || "none"}
+                      onValueChange={(val) => updateDistritoId(user.id, val === "none" ? null : val)}
+                    >
+                      <SelectTrigger className="w-[160px] h-8 text-xs"><SelectValue placeholder="Distrito" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Sem distrito</SelectItem>
+                        {distritos.map(d => (
+                          <SelectItem key={d.id} value={d.id}>Dist. {d.numero} — {d.nome}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+
+                  {(user.tipo_acesso === "lider_congregacao" || user.tipo_acesso === "recepcao" || user.tipo_acesso === "discipulador") && (
+                    <Select
+                      defaultValue={user.congregacao_id || "none"}
+                      onValueChange={(val) => updateCongregacaoId(user.id, val === "none" ? null : val)}
+                    >
+                      <SelectTrigger className="w-[160px] h-8 text-xs"><SelectValue placeholder="Congregação" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Sem congregação</SelectItem>
+                        {distritos.map(d => {
+                          const congs = congregacoes.filter(c => c.distrito_id === d.id);
+                          return congs.map(c => (
+                            <SelectItem key={c.id} value={c.id}>{c.nome} (Dist. {d.numero})</SelectItem>
+                          ));
+                        })}
+                      </SelectContent>
+                    </Select>
+                  )}
+
+                  <Button size="sm" variant="outline" onClick={() => revokeUser(user.id)} className="border-destructive text-destructive hover:bg-destructive/10 gap-1">
+                    <X className="h-4 w-4" /> Revogar
+                  </Button>
+                </div>
               </UserCard>
             ))
           )}
@@ -274,6 +336,14 @@ function UserCard({ user, children }: { user: UserRow; children: React.ReactNode
     day: "2-digit", month: "2-digit", year: "numeric",
   });
 
+  const tipoLabelsLocal: Record<string, string> = {
+    recepcao: "Recepção",
+    discipulador: "Discipulador",
+    rede: "Admin",
+    lider_distrito: "Líder Distrito",
+    lider_congregacao: "Líder Congregação",
+  };
+
   return (
     <Card className="border-border">
       <CardContent className="py-4">
@@ -291,12 +361,12 @@ function UserCard({ user, children }: { user: UserRow; children: React.ReactNode
             </div>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            <Badge variant="outline" className="text-xs capitalize">
-              {tipoLabels[user.tipo_acesso]}
+            <Badge variant="outline" className="text-xs">
+              {tipoLabelsLocal[user.tipo_acesso] || user.tipo_acesso}
             </Badge>
             <span className="text-xs text-muted-foreground">{formattedDate}</span>
           </div>
-          <div className="flex items-center gap-2 shrink-0">{children}</div>
+          <div className="flex items-center gap-2 shrink-0 flex-wrap">{children}</div>
         </div>
       </CardContent>
     </Card>

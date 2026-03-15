@@ -5,21 +5,21 @@ type TipoAcesso = Database["public"]["Enums"]["tipo_acesso_enum"];
 
 // Route permissions matrix
 const routePermissions: Record<string, TipoAcesso[]> = {
-  "/app/dashboard": ["recepcao", "discipulador", "rede"],
-  "/app/visitantes": ["recepcao", "discipulador", "rede"],
-  "/app/discipulos": ["recepcao", "discipulador", "rede"],
-  "/app/discipuladores": ["discipulador", "rede"],
-  "/app/relatorios": ["recepcao", "discipulador", "rede"],
-  "/app/mapa-gcs": ["recepcao", "discipulador", "rede"],
+  "/app/dashboard": ["recepcao", "discipulador", "rede", "lider_distrito", "lider_congregacao"],
+  "/app/visitantes": ["recepcao", "discipulador", "rede", "lider_distrito", "lider_congregacao"],
+  "/app/discipulos": ["discipulador", "rede", "lider_distrito", "lider_congregacao"],
+  "/app/discipuladores": ["discipulador", "rede", "lider_distrito"],
+  "/app/relatorios": ["discipulador", "rede", "lider_distrito", "lider_congregacao"],
+  "/app/mapa-gcs": ["rede"],
   "/app/admin": ["rede"],
   "/app/configuracoes": ["rede"],
 };
 
-// Edit permissions (recepcao can edit visitantes, discipulador can only read visitantes)
+// Edit permissions
 const editPermissions: Record<string, TipoAcesso[]> = {
-  "/app/visitantes": ["recepcao", "rede"],
-  "/app/discipulos": ["discipulador", "rede"],
-  "/app/relatorios": ["rede"],
+  "/app/visitantes": ["recepcao", "rede", "lider_distrito", "lider_congregacao"],
+  "/app/discipulos": ["discipulador", "rede", "lider_distrito", "lider_congregacao"],
+  "/app/relatorios": ["discipulador", "rede", "lider_distrito", "lider_congregacao"],
   "/app/mapa-gcs": ["rede"],
   "/app/admin": ["rede"],
   "/app/dashboard": ["rede"],
@@ -32,9 +32,14 @@ export function usePermissions() {
   const userRole = profile?.tipo_acesso ?? null;
   const isApproved = profile?.status === "aprovado";
   const isAdmin = userRole === "rede" && isApproved;
+  const isLiderDistrito = userRole === "lider_distrito" && isApproved;
+  const isLiderCongregacao = userRole === "lider_congregacao" && isApproved;
 
   const canViewRoute = (route: string): boolean => {
     if (!userRole || !isApproved) return false;
+    // Dynamic routes for drill-down
+    if (route.startsWith("/app/distrito/")) return isAdmin;
+    if (route.startsWith("/app/congregacao/")) return isAdmin || isLiderDistrito;
     const allowed = routePermissions[route];
     if (!allowed) return false;
     return allowed.includes(userRole);
@@ -47,23 +52,17 @@ export function usePermissions() {
     return allowed.includes(userRole);
   };
 
-  // Get first allowed route for redirect after login
   const getDefaultRoute = (): string => {
     if (!userRole || !isApproved) return "/app/dashboard";
-    const orderedRoutes = [
-      "/app/dashboard",
-      "/app/visitantes",
-      "/app/discipulos",
-      "/app/relatorios",
-      "/app/mapa-gcs",
-    ];
-    return orderedRoutes.find((r) => canViewRoute(r)) || "/app/dashboard";
+    return "/app/dashboard";
   };
 
   return {
     userRole,
     isAdmin,
     isApproved,
+    isLiderDistrito,
+    isLiderCongregacao,
     canViewRoute,
     canEditRoute,
     getDefaultRoute,

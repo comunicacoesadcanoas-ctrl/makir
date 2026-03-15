@@ -5,10 +5,19 @@ import { Button } from "@/components/ui/button";
 import { NotificacoesDropdown } from "@/components/NotificacoesDropdown";
 import logoDark from "@/assets/logo-makir.svg";
 
+const roleLabels: Record<string, string> = {
+  rede: "Admin",
+  lider_distrito: "Líder de Distrito",
+  lider_congregacao: "Líder de Congregação",
+  recepcao: "Recepção",
+  discipulador: "Discipulador",
+};
+
 export function AppHeader() {
   const { profile, user, signOut } = useAuth();
   const nome = profile?.nome || user?.user_metadata?.full_name || "Usuário";
   const foto = profile?.foto_url || user?.user_metadata?.avatar_url || "";
+  const roleLabel = roleLabels[profile?.tipo_acesso || ""] || "Líder";
 
   return (
     <header className="h-16 border-b border-border bg-card flex items-center justify-between px-4 md:px-6">
@@ -23,7 +32,7 @@ export function AppHeader() {
         <div className="flex items-center gap-3">
           <div className="text-right hidden sm:block">
             <p className="text-sm font-semibold text-foreground">{nome}</p>
-            <p className="text-[11px] text-muted-foreground capitalize">{profile?.tipo_acesso || "Líder"}</p>
+            <p className="text-[11px] text-muted-foreground">{roleLabel}</p>
           </div>
           <Avatar className="h-9 w-9 ring-2 ring-accent/30">
             <AvatarImage src={foto} alt={nome} />
