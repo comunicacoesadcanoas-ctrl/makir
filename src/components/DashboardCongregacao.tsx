@@ -9,9 +9,11 @@ import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Users, BookOpen, GraduationCap, TrendingUp, ArrowLeft,
-  MapPin, Clock, UserCheck, AlertTriangle, Printer
+  MapPin, Clock, UserCheck, AlertTriangle, Printer, UserPlus, Plus
 } from "lucide-react";
 import { exportDashboardPDF } from "@/lib/export-utils";
+import { VisitanteFormDialog } from "@/components/VisitanteFormDialog";
+import { NovoDiscipuloDialog } from "@/components/NovoDiscipuloDialog";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from "recharts";
@@ -30,6 +32,8 @@ export default function DashboardCongregacao({ congregacaoId: propCongId }: Prop
   const [visitantes, setVisitantes] = useState<any[]>([]);
   const [discipulos, setDiscipulos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showVisitanteDialog, setShowVisitanteDialog] = useState(false);
+  const [showDiscipuloDialog, setShowDiscipuloDialog] = useState(false);
 
   const fetchAll = useCallback(async () => {
     if (!congregacaoId) return;
@@ -98,9 +102,17 @@ export default function DashboardCongregacao({ congregacaoId: propCongId }: Prop
             </p>
           </div>
         </div>
-        <Button variant="outline" size="sm" onClick={exportDashboardPDF} className="gap-1.5 no-print">
-          <Printer className="h-4 w-4" /> Exportar PDF
-        </Button>
+        <div className="flex items-center gap-2 no-print">
+          <Button variant="outline" size="sm" onClick={() => setShowVisitanteDialog(true)} className="gap-1.5">
+            <UserPlus className="h-4 w-4" /> Visitante
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setShowDiscipuloDialog(true)} className="gap-1.5">
+            <Plus className="h-4 w-4" /> Discípulo
+          </Button>
+          <Button variant="outline" size="sm" onClick={exportDashboardPDF} className="gap-1.5">
+            <Printer className="h-4 w-4" /> PDF
+          </Button>
+        </div>
       </div>
 
       {/* Stats */}
@@ -199,6 +211,9 @@ export default function DashboardCongregacao({ congregacaoId: propCongId }: Prop
           )}
         </TabsContent>
       </Tabs>
+
+      <VisitanteFormDialog open={showVisitanteDialog} onOpenChange={setShowVisitanteDialog} onSuccess={fetchAll} />
+      <NovoDiscipuloDialog open={showDiscipuloDialog} onOpenChange={setShowDiscipuloDialog} onSuccess={fetchAll} />
     </div>
   );
 }
