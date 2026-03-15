@@ -156,6 +156,7 @@ export default function Admin() {
               </span>
             )}
           </TabsTrigger>
+          <TabsTrigger value="distritos">Distritos & Congregações</TabsTrigger>
         </TabsList>
 
         <TabsContent value="pendentes" className="space-y-3 mt-4">
