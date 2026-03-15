@@ -16,9 +16,7 @@ import { useCongregacoes } from "@/hooks/useCongregacoes";
 type UserRow = Tables<"users">;
 type TipoAcesso = Database["public"]["Enums"]["tipo_acesso_enum"];
 
-const tipoLabels: Record<TipoAcesso, string> = {
-  recepcao: "Recepção",
-  discipulador: "Discipulador",
+const tipoLabels: Record<string, string> = {
   rede: "Admin",
   lider_distrito: "Líder Distrito",
   lider_congregacao: "Líder Congregação",
