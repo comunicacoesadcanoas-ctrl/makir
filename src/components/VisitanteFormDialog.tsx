@@ -204,6 +204,23 @@ export function VisitanteFormDialog({ open, onOpenChange, visitante, onSuccess }
             <Textarea id="observacoes" {...form.register("observacoes")} placeholder="Anotações..." rows={3} />
           </div>
 
+          {isAdmin && congregacoes.length > 0 && (
+            <div className="space-y-1.5">
+              <Label>Congregação</Label>
+              <Select value={selectedCongregacaoId} onValueChange={setSelectedCongregacaoId}>
+                <SelectTrigger><SelectValue placeholder="Selecionar congregação" /></SelectTrigger>
+                <SelectContent>
+                  {distritos.map(d => {
+                    const congs = congregacoes.filter(c => c.distrito_id === d.id);
+                    return congs.map(c => (
+                      <SelectItem key={c.id} value={c.id}>{c.nome} (Dist. {d.numero})</SelectItem>
+                    ));
+                  })}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
           <div className="flex justify-end gap-2 pt-2">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancelar
