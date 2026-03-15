@@ -86,7 +86,7 @@ export default function Visitantes() {
   const paginatedItems = paginate(page);
 
   // Reset page when filters change
-  useEffect(() => { setPage(1); }, [search, statusFilter]);
+  useEffect(() => { setPage(1); }, [search, statusFilter, congregacaoFilter]);
 
   return (
     <div className="space-y-4">
