@@ -211,8 +211,6 @@ export default function Admin() {
                       <SelectItem value="rede">Admin</SelectItem>
                       <SelectItem value="lider_distrito">Líder Distrito</SelectItem>
                       <SelectItem value="lider_congregacao">Líder Congregação</SelectItem>
-                      <SelectItem value="recepcao">Recepção</SelectItem>
-                      <SelectItem value="discipulador">Discipulador</SelectItem>
                     </SelectContent>
                   </Select>
 
