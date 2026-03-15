@@ -102,9 +102,17 @@ export default function DashboardCongregacao({ congregacaoId: propCongId }: Prop
             </p>
           </div>
         </div>
-        <Button variant="outline" size="sm" onClick={exportDashboardPDF} className="gap-1.5 no-print">
-          <Printer className="h-4 w-4" /> Exportar PDF
-        </Button>
+        <div className="flex items-center gap-2 no-print">
+          <Button variant="outline" size="sm" onClick={() => setShowVisitanteDialog(true)} className="gap-1.5">
+            <UserPlus className="h-4 w-4" /> Visitante
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setShowDiscipuloDialog(true)} className="gap-1.5">
+            <Plus className="h-4 w-4" /> Discípulo
+          </Button>
+          <Button variant="outline" size="sm" onClick={exportDashboardPDF} className="gap-1.5">
+            <Printer className="h-4 w-4" /> PDF
+          </Button>
+        </div>
       </div>
 
       {/* Stats */}
