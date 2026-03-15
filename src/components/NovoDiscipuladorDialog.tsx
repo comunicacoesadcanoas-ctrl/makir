@@ -78,6 +78,22 @@ export function NovoDiscipuladorDialog({ open, onOpenChange, onSuccess }: Props)
             <Label>E-mail *</Label>
             <Input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="email@exemplo.com" />
           </div>
+          {congregacoes.length > 0 && (
+            <div className="space-y-1.5">
+              <Label>Congregação</Label>
+              <Select value={congregacaoId} onValueChange={setCongregacaoId}>
+                <SelectTrigger><SelectValue placeholder="Selecionar congregação" /></SelectTrigger>
+                <SelectContent>
+                  {distritos.map(d => {
+                    const congs = congregacoes.filter(c => c.distrito_id === d.id);
+                    return congs.map(c => (
+                      <SelectItem key={c.id} value={c.id}>{c.nome} (Dist. {d.numero})</SelectItem>
+                    ));
+                  })}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
