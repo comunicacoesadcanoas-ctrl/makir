@@ -461,6 +461,7 @@ export type Database = {
         Row: {
           congregacao_id: string | null
           criado_em: string
+          distrito_id: string | null
           email: string
           foto_url: string | null
           id: string
@@ -471,6 +472,7 @@ export type Database = {
         Insert: {
           congregacao_id?: string | null
           criado_em?: string
+          distrito_id?: string | null
           email: string
           foto_url?: string | null
           id: string
@@ -481,6 +483,7 @@ export type Database = {
         Update: {
           congregacao_id?: string | null
           criado_em?: string
+          distrito_id?: string | null
           email?: string
           foto_url?: string | null
           id?: string
@@ -494,6 +497,13 @@ export type Database = {
             columns: ["congregacao_id"]
             isOneToOne: false
             referencedRelation: "congregacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "users_distrito_id_fkey"
+            columns: ["distrito_id"]
+            isOneToOne: false
+            referencedRelation: "distritos"
             referencedColumns: ["id"]
           },
         ]
@@ -578,7 +588,12 @@ export type Database = {
     }
     Functions: {
       atualizar_status_discipulos: { Args: never; Returns: undefined }
+      congregacao_in_user_distrito: {
+        Args: { cong_id: string }
+        Returns: boolean
+      }
       get_user_congregacao_id: { Args: never; Returns: string }
+      get_user_distrito_id: { Args: never; Returns: string }
       get_user_tipo_acesso: {
         Args: never
         Returns: Database["public"]["Enums"]["tipo_acesso_enum"]
@@ -593,7 +608,12 @@ export type Database = {
       status_gc_enum: "ativo" | "em_formacao" | "inativo"
       status_sessao_enum: "presente" | "ausente" | "reagendado"
       status_solicitacao_enum: "pendente" | "aprovado" | "rejeitado"
-      tipo_acesso_enum: "recepcao" | "discipulador" | "rede"
+      tipo_acesso_enum:
+        | "recepcao"
+        | "discipulador"
+        | "rede"
+        | "lider_distrito"
+        | "lider_congregacao"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -728,7 +748,13 @@ export const Constants = {
       status_gc_enum: ["ativo", "em_formacao", "inativo"],
       status_sessao_enum: ["presente", "ausente", "reagendado"],
       status_solicitacao_enum: ["pendente", "aprovado", "rejeitado"],
-      tipo_acesso_enum: ["recepcao", "discipulador", "rede"],
+      tipo_acesso_enum: [
+        "recepcao",
+        "discipulador",
+        "rede",
+        "lider_distrito",
+        "lider_congregacao",
+      ],
     },
   },
 } as const

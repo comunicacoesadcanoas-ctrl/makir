@@ -31,7 +31,9 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
 
   // Route permission check
   const currentPath = location.pathname;
-  if (currentPath !== "/app" && !canViewRoute(currentPath)) {
+  // Skip permission check for dynamic drill-down routes and the base /app path
+  const isDynamicRoute = currentPath.startsWith("/app/distrito/") || currentPath.startsWith("/app/congregacao/");
+  if (currentPath !== "/app" && !isDynamicRoute && !canViewRoute(currentPath)) {
     return <Navigate to="/app" replace />;
   }
 

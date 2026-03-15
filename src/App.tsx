@@ -10,6 +10,8 @@ import AppLayout from "./layouts/AppLayout";
 import { DefaultRedirect } from "./components/DefaultRedirect";
 
 const Dashboard = lazy(() => import("./pages/Dashboard"));
+const DistritoPage = lazy(() => import("./pages/DistritoPage"));
+const CongregacaoPage = lazy(() => import("./pages/CongregacaoPage"));
 const Visitantes = lazy(() => import("./pages/Visitantes"));
 const Discipulos = lazy(() => import("./pages/Discipulos"));
 const Discipuladores = lazy(() => import("./pages/Discipuladores"));
@@ -56,6 +58,8 @@ const App = () => (
               >
                 <Route index element={<DefaultRedirect />} />
                 <Route path="dashboard" element={<Dashboard />} />
+                <Route path="distrito/:distritoId" element={<DistritoPage />} />
+                <Route path="congregacao/:congId" element={<CongregacaoPage />} />
                 <Route path="visitantes" element={<Visitantes />} />
                 <Route path="discipulos" element={<Discipulos />} />
                 <Route path="discipuladores" element={<Discipuladores />} />
