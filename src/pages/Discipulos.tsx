@@ -1,10 +1,12 @@
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { usePermissions } from "@/hooks/usePermissions";
+import { useCongregacoes } from "@/hooks/useCongregacoes";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BookOpen, Search, Download, Plus, UserCog } from "lucide-react";
 import { ExportDialog } from "@/components/ExportDialog";
 import { Input } from "@/components/ui/input";
@@ -49,10 +51,12 @@ const statusColors: Record<string, { bg: string; ring: string; label: string }> 
 };
 
 export default function Discipulos() {
-  const { userRole } = usePermissions();
+  const { userRole, isAdmin } = usePermissions();
+  const { congregacoes, distritos } = useCongregacoes();
   const [discipulos, setDiscipulos] = useState<DiscipuloWithVisitante[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [congregacaoFilter, setCongregacaoFilter] = useState<string>("all");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [exportOpen, setExportOpen] = useState(false);
   const [novoDiscipuloOpen, setNovoDiscipuloOpen] = useState(false);
@@ -63,7 +67,7 @@ export default function Discipulos() {
     setLoading(true);
     const { data, error } = await supabase
       .from("discipulos")
-      .select("*, visitantes(nome, telefone, cidade, aceitou_jesus, frequenta_igreja, quer_gc, quer_discipulado, estado_civil, sexo, endereco, observacoes, ano, criado_em)")
+      .select("*, visitantes(nome, telefone, cidade, aceitou_jesus, frequenta_igreja, quer_gc, quer_discipulado, estado_civil, sexo, endereco, observacoes, ano, criado_em, congregacao_id)")
       .order("data_inicio", { ascending: false });
 
     if (error) {
@@ -78,14 +82,15 @@ export default function Discipulos() {
   useEffect(() => { fetchDiscipulos(); }, [fetchDiscipulos]);
 
   const filtered = discipulos.filter((d) => {
-    if (!search) return true;
     const nome = d.visitantes?.nome || "";
-    return nome.toLowerCase().includes(search.toLowerCase());
+    const matchSearch = !search || nome.toLowerCase().includes(search.toLowerCase());
+    const matchCong = congregacaoFilter === "all" || (d as any).congregacao_id === congregacaoFilter;
+    return matchSearch && matchCong;
   });
 
   const { paginate, totalPages } = usePagination(filtered);
   const paginatedItems = paginate(page);
-  useEffect(() => { setPage(1); }, [search]);
+  useEffect(() => { setPage(1); }, [search, congregacaoFilter]);
 
   return (
     <div className="space-y-4">
@@ -108,9 +113,25 @@ export default function Discipulos() {
         </div>
       </div>
 
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input placeholder="Buscar por nome..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input placeholder="Buscar por nome..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+        </div>
+        {isAdmin && congregacoes.length > 0 && (
+          <Select value={congregacaoFilter} onValueChange={setCongregacaoFilter}>
+            <SelectTrigger className="w-[180px]"><SelectValue placeholder="Congregação" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas congregações</SelectItem>
+              {distritos.map(d => {
+                const congs = congregacoes.filter(c => c.distrito_id === d.id);
+                return congs.map(c => (
+                  <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
+                ));
+              })}
+            </SelectContent>
+          </Select>
+        )}
       </div>
 
       {loading ? (

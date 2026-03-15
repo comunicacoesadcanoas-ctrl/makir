@@ -11,6 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePermissions } from "@/hooks/usePermissions";
+import { useCongregacoes } from "@/hooks/useCongregacoes";
 import { toast } from "sonner";
 import type { Tables, Database } from "@/integrations/supabase/types";
 
@@ -42,7 +44,12 @@ interface VisitanteFormDialogProps {
 
 export function VisitanteFormDialog({ open, onOpenChange, visitante, onSuccess }: VisitanteFormDialogProps) {
   const { user, profile } = useAuth();
+  const { isAdmin } = usePermissions();
+  const { congregacoes, distritos } = useCongregacoes();
   const [saving, setSaving] = useState(false);
+  const [selectedCongregacaoId, setSelectedCongregacaoId] = useState<string>(
+    visitante?.congregacao_id || profile?.congregacao_id || ""
+  );
   const isEditing = !!visitante;
 
   const form = useForm<FormData>({
@@ -84,12 +91,16 @@ export function VisitanteFormDialog({ open, onOpenChange, visitante, onSuccess }
 
     let error;
     if (isEditing) {
-      ({ error } = await supabase.from("visitantes").update(payload).eq("id", visitante.id));
+      ({ error } = await supabase.from("visitantes").update({
+        ...payload,
+        congregacao_id: isAdmin ? (selectedCongregacaoId || null) : (profile?.congregacao_id || null),
+      }).eq("id", visitante.id));
     } else {
       ({ error } = await supabase.from("visitantes").insert({
         ...payload,
         cadastrado_por: user.id,
         cadastrado_por_nome: profile?.nome || user.user_metadata?.full_name || "Desconhecido",
+        congregacao_id: isAdmin ? (selectedCongregacaoId || null) : (profile?.congregacao_id || null),
       }));
     }
 
@@ -192,6 +203,23 @@ export function VisitanteFormDialog({ open, onOpenChange, visitante, onSuccess }
             <Label htmlFor="observacoes">Observações</Label>
             <Textarea id="observacoes" {...form.register("observacoes")} placeholder="Anotações..." rows={3} />
           </div>
+
+          {isAdmin && congregacoes.length > 0 && (
+            <div className="space-y-1.5">
+              <Label>Congregação</Label>
+              <Select value={selectedCongregacaoId} onValueChange={setSelectedCongregacaoId}>
+                <SelectTrigger><SelectValue placeholder="Selecionar congregação" /></SelectTrigger>
+                <SelectContent>
+                  {distritos.map(d => {
+                    const congs = congregacoes.filter(c => c.distrito_id === d.id);
+                    return congs.map(c => (
+                      <SelectItem key={c.id} value={c.id}>{c.nome} (Dist. {d.numero})</SelectItem>
+                    ));
+                  })}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           <div className="flex justify-end gap-2 pt-2">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

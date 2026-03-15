@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAllAccessRequests, useResolveAccessRequest } from "@/hooks/useAccessRequests";
+import { AdminDistritosTab } from "@/components/AdminDistritosTab";
 import type { Tables, Database } from "@/integrations/supabase/types";
 
 type UserRow = Tables<"users">;
@@ -155,6 +156,7 @@ export default function Admin() {
               </span>
             )}
           </TabsTrigger>
+          <TabsTrigger value="distritos">Distritos & Congregações</TabsTrigger>
         </TabsList>
 
         <TabsContent value="pendentes" className="space-y-3 mt-4">
@@ -249,6 +251,10 @@ export default function Admin() {
               </Card>
             ))
           )}
+        </TabsContent>
+
+        <TabsContent value="distritos" className="mt-4">
+          <AdminDistritosTab />
         </TabsContent>
       </Tabs>
     </div>

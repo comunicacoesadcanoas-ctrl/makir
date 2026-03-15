@@ -3,7 +3,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
+import { useCongregacoes } from "@/hooks/useCongregacoes";
 import { toast } from "sonner";
 import { UserCog } from "lucide-react";
 
@@ -16,11 +18,14 @@ interface Props {
 export function NovoDiscipuladorDialog({ open, onOpenChange, onSuccess }: Props) {
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
+  const [congregacaoId, setCongregacaoId] = useState("");
   const [saving, setSaving] = useState(false);
+  const { congregacoes, distritos } = useCongregacoes();
 
   const resetForm = () => {
     setNome("");
     setEmail("");
+    setCongregacaoId("");
   };
 
   const handleSubmit = async () => {
@@ -35,6 +40,7 @@ export function NovoDiscipuladorDialog({ open, onOpenChange, onSuccess }: Props)
       email: email.trim(),
       tipo_acesso: "discipulador" as const,
       status: "aprovado" as const,
+      congregacao_id: congregacaoId || null,
     });
 
     if (error) {
@@ -72,6 +78,22 @@ export function NovoDiscipuladorDialog({ open, onOpenChange, onSuccess }: Props)
             <Label>E-mail *</Label>
             <Input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="email@exemplo.com" />
           </div>
+          {congregacoes.length > 0 && (
+            <div className="space-y-1.5">
+              <Label>Congregação</Label>
+              <Select value={congregacaoId} onValueChange={setCongregacaoId}>
+                <SelectTrigger><SelectValue placeholder="Selecionar congregação" /></SelectTrigger>
+                <SelectContent>
+                  {distritos.map(d => {
+                    const congs = congregacoes.filter(c => c.distrito_id === d.id);
+                    return congs.map(c => (
+                      <SelectItem key={c.id} value={c.id}>{c.nome} (Dist. {d.numero})</SelectItem>
+                    ));
+                  })}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>

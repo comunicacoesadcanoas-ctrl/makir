@@ -50,8 +50,44 @@ export type Database = {
         }
         Relationships: []
       }
+      congregacoes: {
+        Row: {
+          cidade: string | null
+          criado_em: string
+          distrito_id: string
+          id: string
+          nome: string
+          pastor: string | null
+        }
+        Insert: {
+          cidade?: string | null
+          criado_em?: string
+          distrito_id: string
+          id?: string
+          nome: string
+          pastor?: string | null
+        }
+        Update: {
+          cidade?: string | null
+          criado_em?: string
+          distrito_id?: string
+          id?: string
+          nome?: string
+          pastor?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "congregacoes_distrito_id_fkey"
+            columns: ["distrito_id"]
+            isOneToOne: false
+            referencedRelation: "distritos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       discipulos: {
         Row: {
+          congregacao_id: string | null
           data_inicio: string
           discipulador_id: string
           discipulador_nome: string
@@ -63,6 +99,7 @@ export type Database = {
           visitante_id: string
         }
         Insert: {
+          congregacao_id?: string | null
           data_inicio?: string
           discipulador_id: string
           discipulador_nome: string
@@ -74,6 +111,7 @@ export type Database = {
           visitante_id: string
         }
         Update: {
+          congregacao_id?: string | null
           data_inicio?: string
           discipulador_id?: string
           discipulador_nome?: string
@@ -86,6 +124,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "discipulos_congregacao_id_fkey"
+            columns: ["congregacao_id"]
+            isOneToOne: false
+            referencedRelation: "congregacoes"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "discipulos_visitante_id_fkey"
             columns: ["visitante_id"]
             isOneToOne: true
@@ -93,6 +138,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      distritos: {
+        Row: {
+          criado_em: string
+          id: string
+          nome: string
+          numero: number
+        }
+        Insert: {
+          criado_em?: string
+          id?: string
+          nome: string
+          numero: number
+        }
+        Update: {
+          criado_em?: string
+          id?: string
+          nome?: string
+          numero?: number
+        }
+        Relationships: []
       }
       frequencia_gc: {
         Row: {
@@ -393,6 +459,7 @@ export type Database = {
       }
       users: {
         Row: {
+          congregacao_id: string | null
           criado_em: string
           email: string
           foto_url: string | null
@@ -402,6 +469,7 @@ export type Database = {
           tipo_acesso: Database["public"]["Enums"]["tipo_acesso_enum"]
         }
         Insert: {
+          congregacao_id?: string | null
           criado_em?: string
           email: string
           foto_url?: string | null
@@ -411,6 +479,7 @@ export type Database = {
           tipo_acesso: Database["public"]["Enums"]["tipo_acesso_enum"]
         }
         Update: {
+          congregacao_id?: string | null
           criado_em?: string
           email?: string
           foto_url?: string | null
@@ -419,7 +488,15 @@ export type Database = {
           status?: Database["public"]["Enums"]["status_enum"]
           tipo_acesso?: Database["public"]["Enums"]["tipo_acesso_enum"]
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "users_congregacao_id_fkey"
+            columns: ["congregacao_id"]
+            isOneToOne: false
+            referencedRelation: "congregacoes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       visitantes: {
         Row: {
@@ -429,6 +506,7 @@ export type Database = {
           cadastrado_por: string
           cadastrado_por_nome: string
           cidade: string | null
+          congregacao_id: string | null
           criado_em: string
           endereco: string | null
           estado_civil: Database["public"]["Enums"]["estado_civil_enum"] | null
@@ -449,6 +527,7 @@ export type Database = {
           cadastrado_por: string
           cadastrado_por_nome: string
           cidade?: string | null
+          congregacao_id?: string | null
           criado_em?: string
           endereco?: string | null
           estado_civil?: Database["public"]["Enums"]["estado_civil_enum"] | null
@@ -469,6 +548,7 @@ export type Database = {
           cadastrado_por?: string
           cadastrado_por_nome?: string
           cidade?: string | null
+          congregacao_id?: string | null
           criado_em?: string
           endereco?: string | null
           estado_civil?: Database["public"]["Enums"]["estado_civil_enum"] | null
@@ -482,7 +562,15 @@ export type Database = {
           status_cor?: Database["public"]["Enums"]["status_cor_enum"]
           telefone?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "visitantes_congregacao_id_fkey"
+            columns: ["congregacao_id"]
+            isOneToOne: false
+            referencedRelation: "congregacoes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
@@ -490,6 +578,7 @@ export type Database = {
     }
     Functions: {
       atualizar_status_discipulos: { Args: never; Returns: undefined }
+      get_user_congregacao_id: { Args: never; Returns: string }
       get_user_tipo_acesso: {
         Args: never
         Returns: Database["public"]["Enums"]["tipo_acesso_enum"]

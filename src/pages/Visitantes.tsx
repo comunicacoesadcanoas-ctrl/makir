@@ -2,10 +2,12 @@ import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePermissions } from "@/hooks/usePermissions";
+import { useCongregacoes } from "@/hooks/useCongregacoes";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Users, Plus, Search, Pencil, Trash2, HeartHandshake, Download } from "lucide-react";
 import { ExportDialog } from "@/components/ExportDialog";
 import { toast } from "sonner";
@@ -35,6 +37,8 @@ export default function Visitantes() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
+  const [congregacaoFilter, setCongregacaoFilter] = useState<string>("all");
+  const { congregacoes, distritos } = useCongregacoes();
   const [formOpen, setFormOpen] = useState(false);
   const [editingVisitante, setEditingVisitante] = useState<Visitante | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Visitante | null>(null);
@@ -74,14 +78,15 @@ export default function Visitantes() {
   const filtered = visitantes.filter((v) => {
     const matchesSearch = !search || v.nome.toLowerCase().includes(search.toLowerCase());
     const matchesStatus = !statusFilter || v.status_cor === statusFilter;
-    return matchesSearch && matchesStatus;
+    const matchesCongregacao = congregacaoFilter === "all" || v.congregacao_id === congregacaoFilter;
+    return matchesSearch && matchesStatus && matchesCongregacao;
   });
 
   const { paginate, totalPages } = usePagination(filtered);
   const paginatedItems = paginate(page);
 
   // Reset page when filters change
-  useEffect(() => { setPage(1); }, [search, statusFilter]);
+  useEffect(() => { setPage(1); }, [search, statusFilter, congregacaoFilter]);
 
   return (
     <div className="space-y-4">
@@ -113,6 +118,20 @@ export default function Visitantes() {
           <FilterButton active={statusFilter === "vermelho"} onClick={() => setStatusFilter("vermelho")} label="🔴" />
           <FilterButton active={statusFilter === "amarelo"} onClick={() => setStatusFilter("amarelo")} label="🟡" />
         </div>
+        {isAdmin && congregacoes.length > 0 && (
+          <Select value={congregacaoFilter} onValueChange={setCongregacaoFilter}>
+            <SelectTrigger className="w-[180px]"><SelectValue placeholder="Congregação" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas congregações</SelectItem>
+              {distritos.map(d => {
+                const congs = congregacoes.filter(c => c.distrito_id === d.id);
+                return congs.map(c => (
+                  <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
+                ));
+              })}
+            </SelectContent>
+          </Select>
+        )}
       </div>
 
       {loading ? (
