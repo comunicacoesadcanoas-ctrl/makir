@@ -11,6 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePermissions } from "@/hooks/usePermissions";
+import { useCongregacoes } from "@/hooks/useCongregacoes";
 import { toast } from "sonner";
 import type { Tables, Database } from "@/integrations/supabase/types";
 
