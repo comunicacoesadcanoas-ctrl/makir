@@ -67,7 +67,7 @@ export default function Discipulos() {
     setLoading(true);
     const { data, error } = await supabase
       .from("discipulos")
-      .select("*, visitantes(nome, telefone, cidade, aceitou_jesus, frequenta_igreja, quer_gc, quer_discipulado, estado_civil, sexo, endereco, observacoes, ano, criado_em)")
+      .select("*, visitantes(nome, telefone, cidade, aceitou_jesus, frequenta_igreja, quer_gc, quer_discipulado, estado_civil, sexo, endereco, observacoes, ano, criado_em, congregacao_id)")
       .order("data_inicio", { ascending: false });
 
     if (error) {
