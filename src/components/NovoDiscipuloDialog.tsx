@@ -100,6 +100,7 @@ export function NovoDiscipuloDialog({ open, onOpenChange, onSuccess }: Props) {
       visitante_id: selectedVisitanteId,
       discipulador_id: discipuladorId,
       discipulador_nome: discipuladorNome,
+      congregacao_id: profile?.congregacao_id || null,
     });
 
     if (error) {
