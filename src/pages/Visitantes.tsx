@@ -37,6 +37,8 @@ export default function Visitantes() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
+  const [congregacaoFilter, setCongregacaoFilter] = useState<string>("all");
+  const { congregacoes, distritos } = useCongregacoes();
   const [formOpen, setFormOpen] = useState(false);
   const [editingVisitante, setEditingVisitante] = useState<Visitante | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Visitante | null>(null);
