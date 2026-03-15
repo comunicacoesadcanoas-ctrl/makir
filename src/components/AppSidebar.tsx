@@ -101,12 +101,13 @@ export function BottomNav() {
   const { canViewRoute, userRole } = usePermissions();
   const badges = useBadgeCounts();
 
-  const mobileItems: NavItem[] = [
+  const allMobileItems: NavItem[] = [
     { title: "Dashboard", url: "/app/dashboard", icon: LayoutDashboard, badgeKey: null },
-    { title: "Visitantes", url: "/app/visitantes", icon: Users, badgeKey: "visitantesAmarelos" },
-    { title: "Discípulos", url: "/app/discipulos", icon: BookOpen, badgeKey: "discipulosVermelhos" },
+    { title: "Visitantes", url: "/app/visitantes", icon: Users, badgeKey: "visitantesAmarelos" as const },
+    { title: "Discípulos", url: "/app/discipulos", icon: BookOpen, badgeKey: "discipulosVermelhos" as const },
     { title: "Relatórios", url: "/app/relatorios", icon: BarChart3, badgeKey: null },
-  ].filter(item => canViewRoute(item.url));
+  ];
+  const mobileItems = allMobileItems.filter(item => canViewRoute(item.url));
 
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-card border-t border-border z-50 backdrop-blur-sm bg-card/95">
