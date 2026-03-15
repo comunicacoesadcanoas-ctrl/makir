@@ -40,6 +40,7 @@ export function NovoDiscipuladorDialog({ open, onOpenChange, onSuccess }: Props)
       email: email.trim(),
       tipo_acesso: "discipulador" as const,
       status: "aprovado" as const,
+      congregacao_id: congregacaoId || null,
     });
 
     if (error) {
