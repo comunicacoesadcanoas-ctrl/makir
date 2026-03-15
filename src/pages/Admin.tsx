@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAllAccessRequests, useResolveAccessRequest } from "@/hooks/useAccessRequests";
+import { AdminDistritosTab } from "@/components/AdminDistritosTab";
 import type { Tables, Database } from "@/integrations/supabase/types";
 
 type UserRow = Tables<"users">;
