@@ -31,7 +31,7 @@ export default function Discipuladores() {
       .from("users")
       .select("id, nome, email, foto_url, criado_em")
       .eq("status", "aprovado")
-      .in("tipo_acesso", ["discipulador", "rede"])
+      .in("tipo_acesso", ["rede", "lider_distrito", "lider_congregacao"])
       .order("nome");
 
     if (error) {

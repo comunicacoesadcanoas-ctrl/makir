@@ -118,7 +118,7 @@ export default function Visitantes() {
           <FilterButton active={statusFilter === "vermelho"} onClick={() => setStatusFilter("vermelho")} label="🔴" />
           <FilterButton active={statusFilter === "amarelo"} onClick={() => setStatusFilter("amarelo")} label="🟡" />
         </div>
-        {isAdmin && congregacoes.length > 0 && (
+        {(isAdmin || userRole === "lider_distrito") && congregacoes.length > 0 && (
           <Select value={congregacaoFilter} onValueChange={setCongregacaoFilter}>
             <SelectTrigger className="w-[180px]"><SelectValue placeholder="Congregação" /></SelectTrigger>
             <SelectContent>

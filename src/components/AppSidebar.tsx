@@ -50,9 +50,6 @@ export function AppSidebar() {
   if (canViewRoute("/app/discipulos")) {
     navItems.push({ title: "Discípulos", url: "/app/discipulos", icon: BookOpen, badgeKey: "discipulosVermelhos" });
   }
-  if (canViewRoute("/app/discipuladores")) {
-    navItems.push({ title: "Discipuladores", url: "/app/discipuladores", icon: UserCog, badgeKey: null });
-  }
 
   // Relatórios
   if (canViewRoute("/app/relatorios")) {

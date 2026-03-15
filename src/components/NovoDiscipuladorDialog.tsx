@@ -38,7 +38,7 @@ export function NovoDiscipuladorDialog({ open, onOpenChange, onSuccess }: Props)
       id: crypto.randomUUID(),
       nome: nome.trim(),
       email: email.trim(),
-      tipo_acesso: "discipulador" as const,
+      tipo_acesso: "lider_congregacao" as const,
       status: "aprovado" as const,
       congregacao_id: congregacaoId || null,
     });

@@ -333,8 +333,6 @@ function UserCard({ user, children }: { user: UserRow; children: React.ReactNode
   });
 
   const tipoLabelsLocal: Record<string, string> = {
-    recepcao: "Recepção",
-    discipulador: "Discipulador",
     rede: "Admin",
     lider_distrito: "Líder Distrito",
     lider_congregacao: "Líder Congregação",

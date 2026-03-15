@@ -9,8 +9,6 @@ const roleLabels: Record<string, string> = {
   rede: "Admin",
   lider_distrito: "Líder de Distrito",
   lider_congregacao: "Líder de Congregação",
-  recepcao: "Recepção",
-  discipulador: "Discipulador",
 };
 
 export function AppHeader() {
