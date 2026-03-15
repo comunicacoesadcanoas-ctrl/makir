@@ -44,7 +44,12 @@ interface VisitanteFormDialogProps {
 
 export function VisitanteFormDialog({ open, onOpenChange, visitante, onSuccess }: VisitanteFormDialogProps) {
   const { user, profile } = useAuth();
+  const { isAdmin } = usePermissions();
+  const { congregacoes, distritos } = useCongregacoes();
   const [saving, setSaving] = useState(false);
+  const [selectedCongregacaoId, setSelectedCongregacaoId] = useState<string>(
+    visitante?.congregacao_id || profile?.congregacao_id || ""
+  );
   const isEditing = !!visitante;
 
   const form = useForm<FormData>({
