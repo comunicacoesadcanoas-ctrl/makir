@@ -118,6 +118,20 @@ export default function Visitantes() {
           <FilterButton active={statusFilter === "vermelho"} onClick={() => setStatusFilter("vermelho")} label="🔴" />
           <FilterButton active={statusFilter === "amarelo"} onClick={() => setStatusFilter("amarelo")} label="🟡" />
         </div>
+        {isAdmin && congregacoes.length > 0 && (
+          <Select value={congregacaoFilter} onValueChange={setCongregacaoFilter}>
+            <SelectTrigger className="w-[180px]"><SelectValue placeholder="Congregação" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas congregações</SelectItem>
+              {distritos.map(d => {
+                const congs = congregacoes.filter(c => c.distrito_id === d.id);
+                return congs.map(c => (
+                  <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
+                ));
+              })}
+            </SelectContent>
+          </Select>
+        )}
       </div>
 
       {loading ? (
