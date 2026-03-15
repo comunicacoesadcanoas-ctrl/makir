@@ -18,11 +18,14 @@ interface Props {
 export function NovoDiscipuladorDialog({ open, onOpenChange, onSuccess }: Props) {
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
+  const [congregacaoId, setCongregacaoId] = useState("");
   const [saving, setSaving] = useState(false);
+  const { congregacoes, distritos } = useCongregacoes();
 
   const resetForm = () => {
     setNome("");
     setEmail("");
+    setCongregacaoId("");
   };
 
   const handleSubmit = async () => {
