@@ -78,7 +78,8 @@ export default function Visitantes() {
   const filtered = visitantes.filter((v) => {
     const matchesSearch = !search || v.nome.toLowerCase().includes(search.toLowerCase());
     const matchesStatus = !statusFilter || v.status_cor === statusFilter;
-    return matchesSearch && matchesStatus;
+    const matchesCongregacao = congregacaoFilter === "all" || v.congregacao_id === congregacaoFilter;
+    return matchesSearch && matchesStatus && matchesCongregacao;
   });
 
   const { paginate, totalPages } = usePagination(filtered);
