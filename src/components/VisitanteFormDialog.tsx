@@ -91,12 +91,16 @@ export function VisitanteFormDialog({ open, onOpenChange, visitante, onSuccess }
 
     let error;
     if (isEditing) {
-      ({ error } = await supabase.from("visitantes").update(payload).eq("id", visitante.id));
+      ({ error } = await supabase.from("visitantes").update({
+        ...payload,
+        congregacao_id: isAdmin ? (selectedCongregacaoId || null) : (profile?.congregacao_id || null),
+      }).eq("id", visitante.id));
     } else {
       ({ error } = await supabase.from("visitantes").insert({
         ...payload,
         cadastrado_por: user.id,
         cadastrado_por_nome: profile?.nome || user.user_metadata?.full_name || "Desconhecido",
+        congregacao_id: isAdmin ? (selectedCongregacaoId || null) : (profile?.congregacao_id || null),
       }));
     }
 
