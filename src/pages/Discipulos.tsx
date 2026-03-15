@@ -51,10 +51,12 @@ const statusColors: Record<string, { bg: string; ring: string; label: string }> 
 };
 
 export default function Discipulos() {
-  const { userRole } = usePermissions();
+  const { userRole, isAdmin } = usePermissions();
+  const { congregacoes, distritos } = useCongregacoes();
   const [discipulos, setDiscipulos] = useState<DiscipuloWithVisitante[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [congregacaoFilter, setCongregacaoFilter] = useState<string>("all");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [exportOpen, setExportOpen] = useState(false);
   const [novoDiscipuloOpen, setNovoDiscipuloOpen] = useState(false);
