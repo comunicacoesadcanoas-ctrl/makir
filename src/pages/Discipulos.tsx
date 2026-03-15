@@ -118,7 +118,7 @@ export default function Discipulos() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input placeholder="Buscar por nome..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
         </div>
-        {isAdmin && congregacoes.length > 0 && (
+        {(isAdmin || userRole === "lider_distrito") && congregacoes.length > 0 && (
           <Select value={congregacaoFilter} onValueChange={setCongregacaoFilter}>
             <SelectTrigger className="w-[180px]"><SelectValue placeholder="Congregação" /></SelectTrigger>
             <SelectContent>

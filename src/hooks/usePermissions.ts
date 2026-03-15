@@ -3,13 +3,15 @@ import type { Database } from "@/integrations/supabase/types";
 
 type TipoAcesso = Database["public"]["Enums"]["tipo_acesso_enum"];
 
+const allRoles: TipoAcesso[] = ["rede", "lider_distrito", "lider_congregacao"];
+
 // Route permissions matrix
 const routePermissions: Record<string, TipoAcesso[]> = {
-  "/app/dashboard": ["recepcao", "discipulador", "rede", "lider_distrito", "lider_congregacao"],
-  "/app/visitantes": ["recepcao", "discipulador", "rede", "lider_distrito", "lider_congregacao"],
-  "/app/discipulos": ["discipulador", "rede", "lider_distrito", "lider_congregacao"],
-  "/app/discipuladores": ["discipulador", "rede", "lider_distrito"],
-  "/app/relatorios": ["discipulador", "rede", "lider_distrito", "lider_congregacao"],
+  "/app/dashboard": allRoles,
+  "/app/visitantes": allRoles,
+  "/app/discipulos": allRoles,
+  "/app/discipuladores": allRoles,
+  "/app/relatorios": allRoles,
   "/app/mapa-gcs": ["rede"],
   "/app/admin": ["rede"],
   "/app/configuracoes": ["rede"],
@@ -17,9 +19,9 @@ const routePermissions: Record<string, TipoAcesso[]> = {
 
 // Edit permissions
 const editPermissions: Record<string, TipoAcesso[]> = {
-  "/app/visitantes": ["recepcao", "rede", "lider_distrito", "lider_congregacao"],
-  "/app/discipulos": ["discipulador", "rede", "lider_distrito", "lider_congregacao"],
-  "/app/relatorios": ["discipulador", "rede", "lider_distrito", "lider_congregacao"],
+  "/app/visitantes": allRoles,
+  "/app/discipulos": allRoles,
+  "/app/relatorios": allRoles,
   "/app/mapa-gcs": ["rede"],
   "/app/admin": ["rede"],
   "/app/dashboard": ["rede"],
@@ -37,7 +39,6 @@ export function usePermissions() {
 
   const canViewRoute = (route: string): boolean => {
     if (!userRole || !isApproved) return false;
-    // Dynamic routes for drill-down
     if (route.startsWith("/app/distrito/")) return isAdmin;
     if (route.startsWith("/app/congregacao/")) return isAdmin || isLiderDistrito;
     const allowed = routePermissions[route];
@@ -53,7 +54,6 @@ export function usePermissions() {
   };
 
   const getDefaultRoute = (): string => {
-    if (!userRole || !isApproved) return "/app/dashboard";
     return "/app/dashboard";
   };
 

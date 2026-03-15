@@ -24,15 +24,11 @@ export function useBadgeCounts() {
       .eq("status_cor", "amarelo")
       .is("assumido_por", null);
 
-    // Discípulos vermelhos
-    let discQuery = supabase
+    // Discípulos vermelhos (RLS handles scoping)
+    const { count: discipulosVermelhos } = await supabase
       .from("discipulos")
       .select("*", { count: "exact", head: true })
       .eq("status_cor", "vermelho");
-    if (userRole === "discipulador") {
-      discQuery = discQuery.eq("discipulador_id", user.id);
-    }
-    const { count: discipulosVermelhos } = await discQuery;
 
     // Pendentes admin
     let pendentesAdmin = 0;

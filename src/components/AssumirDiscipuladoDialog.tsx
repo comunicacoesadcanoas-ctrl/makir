@@ -33,7 +33,7 @@ export function AssumirDiscipuladoDialog({ open, onOpenChange, visitante, onSucc
         .from("users")
         .select("id, nome")
         .eq("status", "aprovado")
-        .in("tipo_acesso", ["discipulador", "rede"]);
+        .in("tipo_acesso", ["rede", "lider_distrito", "lider_congregacao"]);
       setDiscipuladores(data || []);
     };
     fetchDiscipuladores();

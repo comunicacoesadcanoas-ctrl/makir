@@ -73,7 +73,7 @@ export default function Visitantes() {
     setDeleteTarget(null);
   };
 
-  const canAssumir = userRole === "discipulador" || isAdmin;
+  const canAssumir = !!userRole;
 
   const filtered = visitantes.filter((v) => {
     const matchesSearch = !search || v.nome.toLowerCase().includes(search.toLowerCase());
@@ -118,7 +118,7 @@ export default function Visitantes() {
           <FilterButton active={statusFilter === "vermelho"} onClick={() => setStatusFilter("vermelho")} label="🔴" />
           <FilterButton active={statusFilter === "amarelo"} onClick={() => setStatusFilter("amarelo")} label="🟡" />
         </div>
-        {isAdmin && congregacoes.length > 0 && (
+        {(isAdmin || userRole === "lider_distrito") && congregacoes.length > 0 && (
           <Select value={congregacaoFilter} onValueChange={setCongregacaoFilter}>
             <SelectTrigger className="w-[180px]"><SelectValue placeholder="Congregação" /></SelectTrigger>
             <SelectContent>

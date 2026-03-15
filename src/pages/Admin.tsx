@@ -16,9 +16,7 @@ import { useCongregacoes } from "@/hooks/useCongregacoes";
 type UserRow = Tables<"users">;
 type TipoAcesso = Database["public"]["Enums"]["tipo_acesso_enum"];
 
-const tipoLabels: Record<TipoAcesso, string> = {
-  recepcao: "Recepção",
-  discipulador: "Discipulador",
+const tipoLabels: Record<string, string> = {
   rede: "Admin",
   lider_distrito: "Líder Distrito",
   lider_congregacao: "Líder Congregação",
@@ -213,8 +211,6 @@ export default function Admin() {
                       <SelectItem value="rede">Admin</SelectItem>
                       <SelectItem value="lider_distrito">Líder Distrito</SelectItem>
                       <SelectItem value="lider_congregacao">Líder Congregação</SelectItem>
-                      <SelectItem value="recepcao">Recepção</SelectItem>
-                      <SelectItem value="discipulador">Discipulador</SelectItem>
                     </SelectContent>
                   </Select>
 
@@ -233,7 +229,7 @@ export default function Admin() {
                     </Select>
                   )}
 
-                  {(user.tipo_acesso === "lider_congregacao" || user.tipo_acesso === "recepcao" || user.tipo_acesso === "discipulador") && (
+                  {user.tipo_acesso === "lider_congregacao" && (
                     <Select
                       defaultValue={user.congregacao_id || "none"}
                       onValueChange={(val) => updateCongregacaoId(user.id, val === "none" ? null : val)}
@@ -337,8 +333,6 @@ function UserCard({ user, children }: { user: UserRow; children: React.ReactNode
   });
 
   const tipoLabelsLocal: Record<string, string> = {
-    recepcao: "Recepção",
-    discipulador: "Discipulador",
     rede: "Admin",
     lider_distrito: "Líder Distrito",
     lider_congregacao: "Líder Congregação",

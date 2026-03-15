@@ -65,7 +65,7 @@ const licaoTitulos: Record<number, string> = {
 
 export function DiscipuloDetailDialog({ open, onOpenChange, discipuloId, onUpdate }: Props) {
   const { userRole } = usePermissions();
-  const canEdit = userRole === "discipulador" || userRole === "rede";
+  const canEdit = !!userRole;
   const [discipulo, setDiscipulo] = useState<DiscipuloDetail | null>(null);
   const [licoes, setLicoes] = useState<Licao[]>([]);
   const [loading, setLoading] = useState(true);
