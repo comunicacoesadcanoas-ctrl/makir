@@ -73,7 +73,7 @@ export default function Visitantes() {
     setDeleteTarget(null);
   };
 
-  const canAssumir = userRole === "discipulador" || isAdmin;
+  const canAssumir = !!userRole;
 
   const filtered = visitantes.filter((v) => {
     const matchesSearch = !search || v.nome.toLowerCase().includes(search.toLowerCase());
