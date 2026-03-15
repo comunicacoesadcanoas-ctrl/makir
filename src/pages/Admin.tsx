@@ -252,6 +252,10 @@ export default function Admin() {
             ))
           )}
         </TabsContent>
+
+        <TabsContent value="distritos" className="mt-4">
+          <AdminDistritosTab />
+        </TabsContent>
       </Tabs>
     </div>
   );
