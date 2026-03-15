@@ -113,9 +113,25 @@ export default function Discipulos() {
         </div>
       </div>
 
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input placeholder="Buscar por nome..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input placeholder="Buscar por nome..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+        </div>
+        {isAdmin && congregacoes.length > 0 && (
+          <Select value={congregacaoFilter} onValueChange={setCongregacaoFilter}>
+            <SelectTrigger className="w-[180px]"><SelectValue placeholder="Congregação" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas congregações</SelectItem>
+              {distritos.map(d => {
+                const congs = congregacoes.filter(c => c.distrito_id === d.id);
+                return congs.map(c => (
+                  <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
+                ));
+              })}
+            </SelectContent>
+          </Select>
+        )}
       </div>
 
       {loading ? (
