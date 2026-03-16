@@ -1,5 +1,5 @@
-import { createContext, useContext, useEffect, useState, useRef, useCallback, ReactNode } from "react";
-import { Session, User } from "@supabase/supabase-js";
+import { createContext, useContext, useEffect, useState, useCallback, useRef, ReactNode } from "react";
+import { Session, User, AuthError } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 
@@ -10,214 +10,177 @@ interface AuthContextType {
   user: User | null;
   profile: UserProfile;
   loading: boolean;
-  profileError: boolean;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType>({
-  session: null,
-  user: null,
-  profile: null,
-  loading: true,
-  profileError: false,
-  signOut: async () => {},
-  refreshProfile: async () => {},
-});
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+/**
+ * Fetches or creates a user profile row in public.users.
+ * Returns the profile or null on failure.
+ */
+async function upsertProfile(authUser: User): Promise<Tables<"users"> | null> {
+  // 1. Try to fetch existing profile
+  const { data, error } = await supabase
+    .from("users")
+    .select("*")
+    .eq("id", authUser.id)
+    .maybeSingle();
+
+  if (error) {
+    console.error("[Auth] Profile fetch error:", error.message);
+    return null;
+  }
+  if (data) return data;
+
+  // 2. Profile doesn't exist — create it
+  const { data: created, error: insertErr } = await supabase
+    .from("users")
+    .insert({
+      id: authUser.id,
+      email: authUser.email || "",
+      nome: authUser.user_metadata?.full_name || authUser.email || "",
+      foto_url: authUser.user_metadata?.avatar_url || null,
+      tipo_acesso: "lider_congregacao" as const,
+    })
+    .select("*")
+    .single();
+
+  if (insertErr) {
+    console.error("[Auth] Profile creation error:", insertErr.message);
+    return null;
+  }
+  return created;
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile>(null);
   const [loading, setLoading] = useState(true);
-  const [profileError, setProfileError] = useState(false);
-  const initialLoadDone = useRef(false);
-  const signingOut = useRef(false);
+  const mounted = useRef(true);
 
-  const fetchProfile = useCallback(async (userId: string) => {
-    try {
-      setProfileError(false);
-      const { data, error } = await supabase
-        .from("users")
-        .select("*")
-        .eq("id", userId)
-        .maybeSingle();
-      if (error) throw error;
-
-      if (!data) {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          const { data: newProfile, error: insertError } = await supabase
-            .from("users")
-            .insert({
-              id: user.id,
-              email: user.email || "",
-              nome: user.user_metadata?.full_name || user.email || "",
-              foto_url: user.user_metadata?.avatar_url || null,
-              tipo_acesso: "lider_congregacao" as const,
-            })
-            .select("*")
-            .single();
-          if (insertError) {
-            console.error("Failed to create profile:", insertError);
-            setProfileError(true);
-            setProfile(null);
-            return null;
-          }
-          if (newProfile) {
-            setProfile(newProfile);
-            return newProfile;
-          }
-        }
-      }
-
-      setProfile(data);
-      return data;
-    } catch (e) {
-      console.error("Failed to fetch profile:", e);
-      setProfileError(true);
-      setProfile(null);
-      return null;
-    }
-  }, []);
-
-  const refreshProfile = useCallback(async () => {
-    const currentUser = user ?? (await supabase.auth.getUser()).data.user;
-    if (currentUser) {
-      await fetchProfile(currentUser.id);
-    }
-  }, [user, fetchProfile]);
-
-  const signOut = useCallback(async () => {
-    signingOut.current = true;
+  // ---- helpers ----
+  const clearState = useCallback(() => {
     setSession(null);
     setUser(null);
     setProfile(null);
-    setProfileError(false);
-    try {
-      await supabase.auth.signOut();
-    } catch (e) {
-      console.error("Sign out error:", e);
-    }
-    // Small delay before allowing re-auth to prevent immediate re-trigger
-    setTimeout(() => {
-      signingOut.current = false;
-    }, 1000);
   }, []);
 
+  const hydrateUser = useCallback(async (sess: Session) => {
+    // Validate the session token server-side
+    const { data: { user: validUser }, error } = await supabase.auth.getUser();
+    if (error || !validUser) {
+      console.warn("[Auth] Session invalid, clearing:", error?.message);
+      await supabase.auth.signOut();
+      clearState();
+      return;
+    }
+
+    if (!mounted.current) return;
+    setSession(sess);
+    setUser(validUser);
+
+    const p = await upsertProfile(validUser);
+    if (mounted.current) setProfile(p);
+  }, [clearState]);
+
+  // ---- initial load ----
   useEffect(() => {
-    let cancelled = false;
+    mounted.current = true;
+    let ignore = false;
 
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (cancelled) return;
+    const init = async () => {
+      try {
+        const { data: { session: currentSession } } = await supabase.auth.getSession();
+        if (ignore) return;
 
-      // Validate session by checking the user with the server
-      if (session) {
-        const { data: { user }, error } = await supabase.auth.getUser();
-        if (error || !user) {
-          // Session is stale (e.g., invalid refresh token) — clear it
-          console.warn("Stale session detected, clearing:", error?.message);
-          await supabase.auth.signOut();
-          setSession(null);
-          setUser(null);
-          setProfile(null);
-          if (!initialLoadDone.current) {
-            initialLoadDone.current = true;
-            setLoading(false);
-          }
-          return;
+        if (currentSession) {
+          await hydrateUser(currentSession);
         }
-        setSession(session);
-        setUser(user);
-        await fetchProfile(user.id);
-      } else {
-        setSession(null);
-        setUser(null);
+      } catch (e) {
+        console.error("[Auth] Init error:", e);
+      } finally {
+        if (!ignore) setLoading(false);
       }
+    };
 
-      if (!initialLoadDone.current) {
-        initialLoadDone.current = true;
-        setLoading(false);
-      }
-    }).catch(() => {
-      if (!initialLoadDone.current) {
-        initialLoadDone.current = true;
-        setLoading(false);
-      }
-    });
+    init();
 
+    // Listen for auth state changes (login, logout, token refresh)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (cancelled) return;
+      async (event, newSession) => {
+        if (ignore) return;
 
-        // Ignore events during explicit sign-out to prevent re-trigger race
-        if (signingOut.current && event !== "SIGNED_OUT") return;
+        switch (event) {
+          case "SIGNED_IN":
+          case "TOKEN_REFRESHED":
+            if (newSession) {
+              setSession(newSession);
+              setUser(newSession.user);
+              // Fetch profile in a microtask to avoid Supabase auth deadlock
+              setTimeout(async () => {
+                if (!ignore) {
+                  const p = await upsertProfile(newSession.user);
+                  if (!ignore) setProfile(p);
+                }
+              }, 0);
+            }
+            break;
 
-        if (event === "SIGNED_OUT") {
-          setSession(null);
-          setUser(null);
-          setProfile(null);
-          if (!initialLoadDone.current) {
-            initialLoadDone.current = true;
-            setLoading(false);
-          }
-          return;
+          case "SIGNED_OUT":
+            clearState();
+            break;
         }
 
-        if (event === "TOKEN_REFRESHED" && !session) {
-          // Token refresh failed — force sign out
-          console.warn("Token refresh failed, signing out");
-          await supabase.auth.signOut();
-          setSession(null);
-          setUser(null);
-          setProfile(null);
-          return;
-        }
-
-        setSession(session);
-        setUser(session?.user ?? null);
-        if (session?.user) {
-          setTimeout(() => {
-            if (!cancelled) fetchProfile(session.user.id);
-          }, 0);
-        } else {
-          setProfile(null);
-        }
-        if (!initialLoadDone.current) {
-          initialLoadDone.current = true;
-          setLoading(false);
-        }
+        if (loading) setLoading(false);
       }
     );
 
-    const timeout = setTimeout(() => {
-      if (!initialLoadDone.current) {
-        initialLoadDone.current = true;
-        setLoading(false);
-      }
-    }, 3000);
-
     return () => {
-      cancelled = true;
-      clearTimeout(timeout);
+      ignore = true;
+      mounted.current = false;
       subscription.unsubscribe();
     };
-  }, [fetchProfile]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  // Refresh profile on window focus
+  // Refresh profile on window focus (picks up role/status changes immediately)
   useEffect(() => {
-    const onFocus = () => {
-      if (user) fetchProfile(user.id);
+    const onFocus = async () => {
+      if (user) {
+        const p = await upsertProfile(user);
+        if (mounted.current) setProfile(p);
+      }
     };
     window.addEventListener("focus", onFocus);
     return () => window.removeEventListener("focus", onFocus);
-  }, [user, fetchProfile]);
+  }, [user]);
+
+  // ---- actions ----
+  const signOut = useCallback(async () => {
+    clearState();
+    await supabase.auth.signOut();
+  }, [clearState]);
+
+  const refreshProfile = useCallback(async () => {
+    const u = user ?? (await supabase.auth.getUser()).data.user;
+    if (u) {
+      const p = await upsertProfile(u);
+      if (mounted.current) setProfile(p);
+    }
+  }, [user]);
 
   return (
-    <AuthContext.Provider value={{ session, user, profile, loading, profileError, signOut, refreshProfile }}>
+    <AuthContext.Provider value={{ session, user, profile, loading, signOut, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );
 }
 
-export const useAuth = () => useContext(AuthContext);
+export function useAuth() {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error("useAuth must be used within <AuthProvider>");
+  return ctx;
+}

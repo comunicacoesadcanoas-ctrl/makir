@@ -9,6 +9,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import AppLayout from "./layouts/AppLayout";
 import { DefaultRedirect } from "./components/DefaultRedirect";
 
+const Login = lazy(() => import("./pages/Login"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const DistritoPage = lazy(() => import("./pages/DistritoPage"));
 const CongregacaoPage = lazy(() => import("./pages/CongregacaoPage"));
@@ -46,8 +47,11 @@ const App = () => (
         <AuthProvider>
           <Suspense fallback={<PageLoader />}>
             <Routes>
-              <Route path="/" element={<Navigate to="/app/dashboard" replace />} />
-              <Route path="/login" element={<Navigate to="/app/dashboard" replace />} />
+              {/* Public routes */}
+              <Route path="/" element={<Navigate to="/login" replace />} />
+              <Route path="/login" element={<Login />} />
+
+              {/* Protected app shell */}
               <Route
                 path="/app"
                 element={
@@ -68,6 +72,7 @@ const App = () => (
                 <Route path="admin" element={<Admin />} />
                 <Route path="configuracoes" element={<Configuracoes />} />
               </Route>
+
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>
