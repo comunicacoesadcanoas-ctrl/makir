@@ -13,6 +13,7 @@ const roleLabels: Record<string, string> = {
 };
 
 export function AppHeader() {
+  const navigate = useNavigate();
   const { profile, user, signOut } = useAuth();
   const nome = profile?.nome || user?.user_metadata?.full_name || "Usuário";
   const foto = profile?.foto_url || user?.user_metadata?.avatar_url || "";
