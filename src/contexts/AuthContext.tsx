@@ -10,6 +10,7 @@ interface AuthContextType {
   user: User | null;
   profile: UserProfile;
   loading: boolean;
+  profileError: boolean;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
 }
@@ -19,6 +20,7 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   profile: null,
   loading: true,
+  profileError: false,
   signOut: async () => {},
   refreshProfile: async () => {},
 });
@@ -28,10 +30,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile>(null);
   const [loading, setLoading] = useState(true);
+  const [profileError, setProfileError] = useState(false);
   const initialLoadDone = useRef(false);
+  const signingOut = useRef(false);
 
   const fetchProfile = useCallback(async (userId: string) => {
     try {
+      setProfileError(false);
       const { data, error } = await supabase
         .from("users")
         .select("*")
@@ -53,7 +58,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             })
             .select("*")
             .single();
-          if (!insertError && newProfile) {
+          if (insertError) {
+            console.error("Failed to create profile:", insertError);
+            setProfileError(true);
+            setProfile(null);
+            return null;
+          }
+          if (newProfile) {
             setProfile(newProfile);
             return newProfile;
           }
@@ -64,6 +75,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return data;
     } catch (e) {
       console.error("Failed to fetch profile:", e);
+      setProfileError(true);
       setProfile(null);
       return null;
     }
@@ -77,23 +89,52 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [user, fetchProfile]);
 
   const signOut = useCallback(async () => {
-    await supabase.auth.signOut();
+    signingOut.current = true;
     setSession(null);
     setUser(null);
     setProfile(null);
+    setProfileError(false);
+    try {
+      await supabase.auth.signOut();
+    } catch (e) {
+      console.error("Sign out error:", e);
+    }
+    // Small delay before allowing re-auth to prevent immediate re-trigger
+    setTimeout(() => {
+      signingOut.current = false;
+    }, 1000);
   }, []);
 
   useEffect(() => {
     let cancelled = false;
 
-    // Get session first, fast path
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (cancelled) return;
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        await fetchProfile(session.user.id);
+
+      // Validate session by checking the user with the server
+      if (session) {
+        const { data: { user }, error } = await supabase.auth.getUser();
+        if (error || !user) {
+          // Session is stale (e.g., invalid refresh token) — clear it
+          console.warn("Stale session detected, clearing:", error?.message);
+          await supabase.auth.signOut();
+          setSession(null);
+          setUser(null);
+          setProfile(null);
+          if (!initialLoadDone.current) {
+            initialLoadDone.current = true;
+            setLoading(false);
+          }
+          return;
+        }
+        setSession(session);
+        setUser(user);
+        await fetchProfile(user.id);
+      } else {
+        setSession(null);
+        setUser(null);
       }
+
       if (!initialLoadDone.current) {
         initialLoadDone.current = true;
         setLoading(false);
@@ -105,14 +146,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     });
 
-    // Listen for auth changes (token refresh, sign in/out)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
+      async (event, session) => {
         if (cancelled) return;
+
+        // Ignore events during explicit sign-out to prevent re-trigger race
+        if (signingOut.current && event !== "SIGNED_OUT") return;
+
+        if (event === "SIGNED_OUT") {
+          setSession(null);
+          setUser(null);
+          setProfile(null);
+          if (!initialLoadDone.current) {
+            initialLoadDone.current = true;
+            setLoading(false);
+          }
+          return;
+        }
+
+        if (event === "TOKEN_REFRESHED" && !session) {
+          // Token refresh failed — force sign out
+          console.warn("Token refresh failed, signing out");
+          await supabase.auth.signOut();
+          setSession(null);
+          setUser(null);
+          setProfile(null);
+          return;
+        }
+
         setSession(session);
         setUser(session?.user ?? null);
         if (session?.user) {
-          // Use setTimeout to avoid Supabase deadlock on token refresh
           setTimeout(() => {
             if (!cancelled) fetchProfile(session.user.id);
           }, 0);
@@ -126,13 +190,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     );
 
-    // Safety timeout - release loading after 2s max
     const timeout = setTimeout(() => {
       if (!initialLoadDone.current) {
         initialLoadDone.current = true;
         setLoading(false);
       }
-    }, 2000);
+    }, 3000);
 
     return () => {
       cancelled = true;
@@ -151,7 +214,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [user, fetchProfile]);
 
   return (
-    <AuthContext.Provider value={{ session, user, profile, loading, signOut, refreshProfile }}>
+    <AuthContext.Provider value={{ session, user, profile, loading, profileError, signOut, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );
