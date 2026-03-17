@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { usePermissions } from "@/hooks/usePermissions";
+import { useCongregacoes } from "@/hooks/useCongregacoes";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -44,6 +45,8 @@ interface GC {
   data_inicio: string | null;
   tipo_gc: TipoGC | null;
   faixa_etaria: FaixaEtaria | null;
+  distrito_id: string | null;
+  congregacao_id: string | null;
 }
 
 const diasSemana = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"];
@@ -106,6 +109,8 @@ const emptyForm = {
   data_inicio: new Date().toISOString().slice(0, 10),
   formLat: null as number | null,
   formLng: null as number | null,
+  distrito_id: "" as string,
+  congregacao_id: "" as string,
 };
 
 const defaultCenter: [number, number] = [-51.1833, -29.9167]; // [lng, lat] Canoas, RS
@@ -132,6 +137,7 @@ function createGlowMarker(color: string): HTMLElement {
 
 export default function MapaGCs() {
   const { isAdmin } = usePermissions();
+  const { congregacoes, distritos } = useCongregacoes();
   const [gcs, setGcs] = useState<GC[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -186,6 +192,8 @@ export default function MapaGCs() {
       faixa_etaria: (gc.faixa_etaria || "adulto") as FaixaEtaria,
       observacoes: gc.observacoes || "", data_inicio: gc.data_inicio || new Date().toISOString().slice(0, 10),
       formLat: gc.latitude, formLng: gc.longitude,
+      distrito_id: gc.distrito_id || "",
+      congregacao_id: gc.congregacao_id || "",
     });
     setShowForm(true);
   };
@@ -267,6 +275,8 @@ export default function MapaGCs() {
       data_inicio: form.data_inicio || null,
       tipo_gc: form.tipo_gc,
       faixa_etaria: form.faixa_etaria,
+      distrito_id: form.distrito_id || null,
+      congregacao_id: form.congregacao_id || null,
     };
 
     let error;
@@ -763,6 +773,34 @@ export default function MapaGCs() {
             <DialogTitle>{editingId ? "Editar GC" : "Novo Grupo de Crescimento"}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
+            {/* Distrito & Congregação */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-foreground">Distrito</label>
+                <Select value={form.distrito_id} onValueChange={v => setForm(f => ({ ...f, distrito_id: v, congregacao_id: "" }))}>
+                  <SelectTrigger><SelectValue placeholder="Selecione o distrito" /></SelectTrigger>
+                  <SelectContent>
+                    {distritos.map(d => (
+                      <SelectItem key={d.id} value={d.id}>Distrito {d.numero} — {d.nome}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-foreground">Congregação</label>
+                <Select value={form.congregacao_id} onValueChange={v => setForm(f => ({ ...f, congregacao_id: v }))}>
+                  <SelectTrigger><SelectValue placeholder="Selecione a congregação" /></SelectTrigger>
+                  <SelectContent>
+                    {congregacoes
+                      .filter(c => !form.distrito_id || c.distrito_id === form.distrito_id)
+                      .map(c => (
+                        <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1 sm:col-span-2">
                 <label className="text-sm font-medium text-foreground">Nome do GC *</label>

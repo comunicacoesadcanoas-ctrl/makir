@@ -26,6 +26,7 @@ interface DistritoData {
   numero: number;
   nome: string;
   totalCongregacoes: number;
+  totalGCs: number;
   totalVisitantes: number;
   totalDiscipulos: number;
 }
@@ -48,7 +49,7 @@ export default function DashboardGeral() {
       supabase.from("congregacoes").select("*"),
       supabase.from("visitantes").select("id, status_cor, congregacao_id, criado_em"),
       supabase.from("discipulos").select("id, status_cor, congregacao_id, licoes_concluidas"),
-      supabase.from("grupos_crescimento").select("id, status_gc, total_membros"),
+      supabase.from("grupos_crescimento").select("id, status_gc, total_membros, congregacao_id"),
     ]);
     setDistritos(dRes.data || []);
     setCongregacoes(cRes.data || []);
@@ -69,11 +70,12 @@ export default function DashboardGeral() {
         numero: d.numero,
         nome: d.nome,
         totalCongregacoes: congs.length,
+        totalGCs: gcs.filter(g => g.congregacao_id && congIds.has(g.congregacao_id)).length,
         totalVisitantes: visitantes.filter(v => congIds.has(v.congregacao_id)).length,
         totalDiscipulos: discipulos.filter(di => congIds.has(di.congregacao_id)).length,
       };
     });
-  }, [distritos, congregacoes, visitantes, discipulos]);
+  }, [distritos, congregacoes, visitantes, discipulos, gcs]);
 
   const totalVisitantes = visitantes.length;
   const totalDiscipulos = discipulos.length;
@@ -179,8 +181,9 @@ export default function DashboardGeral() {
                   </div>
                   <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-accent transition-colors" />
                 </div>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-4 gap-2">
                   <MiniStat value={d.totalCongregacoes} label="Congregações" />
+                  <MiniStat value={d.totalGCs} label="GCs" />
                   <MiniStat value={d.totalVisitantes} label="Visitantes" />
                   <MiniStat value={d.totalDiscipulos} label="Discípulos" />
                 </div>

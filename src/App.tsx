@@ -82,8 +82,20 @@ const App = () => (
               >
                 <Route index element={<DefaultRedirect />} />
                 <Route path="dashboard" element={<Dashboard />} />
+
+                {/* Distrito context routes */}
                 <Route path="distrito/:distritoId" element={<DistritoPage />} />
+                <Route path="distrito/:distritoId/visitantes" element={<Visitantes />} />
+                <Route path="distrito/:distritoId/discipulos" element={<Discipulos />} />
+                <Route path="distrito/:distritoId/relatorios" element={<Relatorios />} />
+
+                {/* Congregação context routes */}
                 <Route path="congregacao/:congId" element={<CongregacaoPage />} />
+                <Route path="congregacao/:congId/visitantes" element={<Visitantes />} />
+                <Route path="congregacao/:congId/discipulos" element={<Discipulos />} />
+                <Route path="congregacao/:congId/relatorios" element={<Relatorios />} />
+
+                {/* Global routes */}
                 <Route path="visitantes" element={<Visitantes />} />
                 <Route path="discipulos" element={<Discipulos />} />
                 <Route path="discipuladores" element={<Discipuladores />} />

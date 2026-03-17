@@ -32,7 +32,7 @@ export function useSidebarContext(): SidebarContextResult {
   const [congregacao, setCongregacao] = useState<CongregacaoContext | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // Extract IDs from URL
+  // Extract IDs from URL — support sub-routes like /app/distrito/:id/visitantes
   const distritoMatch = location.pathname.match(/^\/app\/distrito\/([^/]+)/);
   const congMatch = location.pathname.match(/^\/app\/congregacao\/([^/]+)/);
 

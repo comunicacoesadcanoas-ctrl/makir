@@ -93,7 +93,13 @@ function DistritoSidebar({ distrito, loading }: { distrito: NonNullable<ReturnTy
 
   if (loading || !distrito) return <SidebarSkeleton />;
 
-  const distritoUrl = `/app/distrito/${distrito.id}`;
+  const base = `/app/distrito/${distrito.id}`;
+  const contextLinks: NavItem[] = [
+    { title: "Visão Geral", url: base, icon: Eye, badgeKey: null },
+    { title: "Visitantes", url: `${base}/visitantes`, icon: Users, badgeKey: null },
+    { title: "Discípulos", url: `${base}/discipulos`, icon: BookOpen, badgeKey: null },
+    { title: "Relatórios", url: `${base}/relatorios`, icon: BarChart3, badgeKey: null },
+  ];
 
   return (
     <nav className="flex-1 px-3 space-y-1">
@@ -107,11 +113,14 @@ function DistritoSidebar({ distrito, loading }: { distrito: NonNullable<ReturnTy
         <p className="text-[11px] text-sidebar-foreground/40 mt-0.5 pl-6">{distrito.nome}</p>
       </div>
 
-      <SidebarLink
-        item={{ title: "Visão Geral", url: distritoUrl, icon: Eye, badgeKey: null }}
-        isActive={location.pathname === distritoUrl}
-        badgeCount={0}
-      />
+      {contextLinks.map(item => (
+        <SidebarLink
+          key={item.url}
+          item={item}
+          isActive={location.pathname === item.url}
+          badgeCount={0}
+        />
+      ))}
 
       {/* Congregações section */}
       {distrito.congregacoes.length > 0 && (
@@ -125,7 +134,7 @@ function DistritoSidebar({ distrito, loading }: { distrito: NonNullable<ReturnTy
                 key={c.id}
                 to={`/app/congregacao/${c.id}`}
                 className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all duration-200 ${
-                  location.pathname === `/app/congregacao/${c.id}`
+                  location.pathname.startsWith(`/app/congregacao/${c.id}`)
                     ? "bg-sidebar-accent text-sidebar-primary font-medium"
                     : "text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
                 }`}
@@ -150,7 +159,13 @@ function CongregacaoSidebar({ congregacao, loading }: { congregacao: NonNullable
 
   if (loading || !congregacao) return <SidebarSkeleton />;
 
-  const congUrl = `/app/congregacao/${congregacao.id}`;
+  const base = `/app/congregacao/${congregacao.id}`;
+  const contextLinks: NavItem[] = [
+    { title: "Visão Geral", url: base, icon: Eye, badgeKey: null },
+    { title: "Visitantes", url: `${base}/visitantes`, icon: Users, badgeKey: null },
+    { title: "Discípulos", url: `${base}/discipulos`, icon: BookOpen, badgeKey: null },
+    { title: "Relatórios", url: `${base}/relatorios`, icon: BarChart3, badgeKey: null },
+  ];
 
   return (
     <nav className="flex-1 px-3 space-y-1">
@@ -167,11 +182,14 @@ function CongregacaoSidebar({ congregacao, loading }: { congregacao: NonNullable
         <p className="text-[11px] text-sidebar-foreground/40 mt-0.5 pl-6">{congregacao.distritoNome}</p>
       </div>
 
-      <SidebarLink
-        item={{ title: "Visão Geral", url: congUrl, icon: Eye, badgeKey: null }}
-        isActive={location.pathname === congUrl}
-        badgeCount={0}
-      />
+      {contextLinks.map(item => (
+        <SidebarLink
+          key={item.url}
+          item={item}
+          isActive={location.pathname === item.url}
+          badgeCount={0}
+        />
+      ))}
     </nav>
   );
 }
@@ -209,14 +227,22 @@ export function BottomNav() {
   let mobileItems: NavItem[] = [];
 
   if (mode === "distrito" && distrito) {
+    const base = `/app/distrito/${distrito.id}`;
     mobileItems = [
       { title: "Voltar", url: "/app/dashboard", icon: ArrowLeft, badgeKey: null },
-      { title: "Visão Geral", url: `/app/distrito/${distrito.id}`, icon: Eye, badgeKey: null },
+      { title: "Geral", url: base, icon: Eye, badgeKey: null },
+      { title: "Visitantes", url: `${base}/visitantes`, icon: Users, badgeKey: null },
+      { title: "Discípulos", url: `${base}/discipulos`, icon: BookOpen, badgeKey: null },
+      { title: "Relatórios", url: `${base}/relatorios`, icon: BarChart3, badgeKey: null },
     ];
   } else if (mode === "congregacao" && congregacao) {
+    const base = `/app/congregacao/${congregacao.id}`;
     mobileItems = [
       { title: "Distrito", url: `/app/distrito/${congregacao.distritoId}`, icon: ArrowLeft, badgeKey: null },
-      { title: "Visão Geral", url: `/app/congregacao/${congregacao.id}`, icon: Eye, badgeKey: null },
+      { title: "Geral", url: base, icon: Eye, badgeKey: null },
+      { title: "Visitantes", url: `${base}/visitantes`, icon: Users, badgeKey: null },
+      { title: "Discípulos", url: `${base}/discipulos`, icon: BookOpen, badgeKey: null },
+      { title: "Relatórios", url: `${base}/relatorios`, icon: BarChart3, badgeKey: null },
     ];
   } else {
     const allMobileItems: NavItem[] = [
