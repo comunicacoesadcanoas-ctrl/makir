@@ -181,8 +181,9 @@ export default function DashboardGeral() {
                   </div>
                   <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-accent transition-colors" />
                 </div>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-4 gap-2">
                   <MiniStat value={d.totalCongregacoes} label="Congregações" />
+                  <MiniStat value={d.totalGCs} label="GCs" />
                   <MiniStat value={d.totalVisitantes} label="Visitantes" />
                   <MiniStat value={d.totalDiscipulos} label="Discípulos" />
                 </div>
