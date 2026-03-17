@@ -137,6 +137,7 @@ function createGlowMarker(color: string): HTMLElement {
 
 export default function MapaGCs() {
   const { isAdmin } = usePermissions();
+  const { congregacoes, distritos } = useCongregacoes();
   const [gcs, setGcs] = useState<GC[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
