@@ -773,6 +773,34 @@ export default function MapaGCs() {
             <DialogTitle>{editingId ? "Editar GC" : "Novo Grupo de Crescimento"}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
+            {/* Distrito & Congregação */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-foreground">Distrito</label>
+                <Select value={form.distrito_id} onValueChange={v => setForm(f => ({ ...f, distrito_id: v, congregacao_id: "" }))}>
+                  <SelectTrigger><SelectValue placeholder="Selecione o distrito" /></SelectTrigger>
+                  <SelectContent>
+                    {distritos.map(d => (
+                      <SelectItem key={d.id} value={d.id}>Distrito {d.numero} — {d.nome}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-foreground">Congregação</label>
+                <Select value={form.congregacao_id} onValueChange={v => setForm(f => ({ ...f, congregacao_id: v }))}>
+                  <SelectTrigger><SelectValue placeholder="Selecione a congregação" /></SelectTrigger>
+                  <SelectContent>
+                    {congregacoes
+                      .filter(c => !form.distrito_id || c.distrito_id === form.distrito_id)
+                      .map(c => (
+                        <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1 sm:col-span-2">
                 <label className="text-sm font-medium text-foreground">Nome do GC *</label>
