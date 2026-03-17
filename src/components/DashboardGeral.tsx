@@ -26,6 +26,7 @@ interface DistritoData {
   numero: number;
   nome: string;
   totalCongregacoes: number;
+  totalGCs: number;
   totalVisitantes: number;
   totalDiscipulos: number;
 }
