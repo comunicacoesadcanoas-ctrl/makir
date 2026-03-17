@@ -62,6 +62,14 @@ const App = () => (
                   </ProtectedRoute>
                 }
               />
+              <Route
+                path="/app/aguardando-aprovacao"
+                element={
+                  <ProtectedRoute>
+                    <AguardandoAprovacao />
+                  </ProtectedRoute>
+                }
+              />
 
               {/* Protected app shell */}
               <Route
