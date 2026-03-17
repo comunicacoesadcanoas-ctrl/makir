@@ -3,7 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { usePermissions } from "@/hooks/usePermissions";
 
 export default function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { session, profile, ready } = useAuth();
+  const { session, profile, ready, needsOnboarding } = useAuth();
   const { canViewRoute } = usePermissions();
   const location = useLocation();
 
