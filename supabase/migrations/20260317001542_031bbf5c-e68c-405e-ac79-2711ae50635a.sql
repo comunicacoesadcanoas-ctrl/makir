@@ -1,0 +1,1 @@
+ALTER TABLE public.users ALTER COLUMN status SET DEFAULT 'pendente'::status_enum;
