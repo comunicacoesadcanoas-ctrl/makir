@@ -202,9 +202,11 @@ export type Database = {
         Row: {
           bairro: string | null
           capacidade: number | null
+          congregacao_id: string | null
           criado_em: string
           data_inicio: string | null
           dia_encontro: string[] | null
+          distrito_id: string | null
           endereco: string | null
           faixa_etaria: string | null
           horario: string | null
@@ -226,9 +228,11 @@ export type Database = {
         Insert: {
           bairro?: string | null
           capacidade?: number | null
+          congregacao_id?: string | null
           criado_em?: string
           data_inicio?: string | null
           dia_encontro?: string[] | null
+          distrito_id?: string | null
           endereco?: string | null
           faixa_etaria?: string | null
           horario?: string | null
@@ -250,9 +254,11 @@ export type Database = {
         Update: {
           bairro?: string | null
           capacidade?: number | null
+          congregacao_id?: string | null
           criado_em?: string
           data_inicio?: string | null
           dia_encontro?: string[] | null
+          distrito_id?: string | null
           endereco?: string | null
           faixa_etaria?: string | null
           horario?: string | null
@@ -271,7 +277,22 @@ export type Database = {
           total_membros?: number | null
           zona?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "grupos_crescimento_congregacao_id_fkey"
+            columns: ["congregacao_id"]
+            isOneToOne: false
+            referencedRelation: "congregacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "grupos_crescimento_distrito_id_fkey"
+            columns: ["distrito_id"]
+            isOneToOne: false
+            referencedRelation: "distritos"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       licoes: {
         Row: {
