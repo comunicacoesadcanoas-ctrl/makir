@@ -52,6 +52,16 @@ const App = () => (
               <Route path="/" element={<Navigate to="/login" replace />} />
               <Route path="/login" element={<Login />} />
 
+              {/* Onboarding — protected but outside AppLayout */}
+              <Route
+                path="/app/selecionar-acesso"
+                element={
+                  <ProtectedRoute>
+                    <SelecionarAcesso />
+                  </ProtectedRoute>
+                }
+              />
+
               {/* Protected app shell */}
               <Route
                 path="/app"
@@ -62,7 +72,6 @@ const App = () => (
                 }
               >
                 <Route index element={<DefaultRedirect />} />
-                <Route path="selecionar-acesso" element={<SelecionarAcesso />} />
                 <Route path="dashboard" element={<Dashboard />} />
                 <Route path="distrito/:distritoId" element={<DistritoPage />} />
                 <Route path="congregacao/:congId" element={<CongregacaoPage />} />
