@@ -192,6 +192,8 @@ export default function MapaGCs() {
       faixa_etaria: (gc.faixa_etaria || "adulto") as FaixaEtaria,
       observacoes: gc.observacoes || "", data_inicio: gc.data_inicio || new Date().toISOString().slice(0, 10),
       formLat: gc.latitude, formLng: gc.longitude,
+      distrito_id: gc.distrito_id || "",
+      congregacao_id: gc.congregacao_id || "",
     });
     setShowForm(true);
   };
