@@ -48,14 +48,16 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
     );
   }
 
-  // 4. Route permission check
-  const currentPath = location.pathname;
-  const isDynamicRoute =
-    currentPath.startsWith("/app/distrito/") ||
-    currentPath.startsWith("/app/congregacao/");
+  // 5. Route permission check (skip for onboarding route and when profile is null during onboarding)
+  if (profile) {
+    const currentPath = location.pathname;
+    const isDynamicRoute =
+      currentPath.startsWith("/app/distrito/") ||
+      currentPath.startsWith("/app/congregacao/");
 
-  if (currentPath !== "/app" && !isDynamicRoute && !canViewRoute(currentPath)) {
-    return <Navigate to="/app" replace />;
+    if (currentPath !== "/app" && currentPath !== "/app/selecionar-acesso" && !isDynamicRoute && !canViewRoute(currentPath)) {
+      return <Navigate to="/app" replace />;
+    }
   }
 
   return <>{children}</>;
