@@ -20,6 +20,7 @@ const Relatorios = lazy(() => import("./pages/Relatorios"));
 const MapaGCs = lazy(() => import("./pages/MapaGCs"));
 const Admin = lazy(() => import("./pages/Admin"));
 const Configuracoes = lazy(() => import("./pages/Configuracoes"));
+const SelecionarAcesso = lazy(() => import("./pages/SelecionarAcesso"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient({
@@ -50,6 +51,16 @@ const App = () => (
               {/* Public routes */}
               <Route path="/" element={<Navigate to="/login" replace />} />
               <Route path="/login" element={<Login />} />
+
+              {/* Onboarding — protected but outside AppLayout */}
+              <Route
+                path="/app/selecionar-acesso"
+                element={
+                  <ProtectedRoute>
+                    <SelecionarAcesso />
+                  </ProtectedRoute>
+                }
+              />
 
               {/* Protected app shell */}
               <Route

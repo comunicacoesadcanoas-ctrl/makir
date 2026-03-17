@@ -3,7 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { usePermissions } from "@/hooks/usePermissions";
 
 export default function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { session, profile, ready } = useAuth();
+  const { session, profile, ready, needsOnboarding } = useAuth();
   const { canViewRoute } = usePermissions();
   const location = useLocation();
 
@@ -21,8 +21,16 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
     return <Navigate to="/login" state={{ from: location.pathname }} replace />;
   }
 
-  // 3. Authenticated but no profile (fetch failed) — show error, don't spin forever
-  if (!profile) {
+  // 3. Needs onboarding — redirect to role selection
+  if (needsOnboarding) {
+    const isOnboardingRoute = location.pathname === "/app/selecionar-acesso";
+    if (!isOnboardingRoute) {
+      return <Navigate to="/app/selecionar-acesso" replace />;
+    }
+  }
+
+  // 4. Authenticated but no profile and not onboarding — show error
+  if (!profile && !needsOnboarding) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background px-4">
         <div className="text-center space-y-4 max-w-sm">
@@ -40,14 +48,16 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
     );
   }
 
-  // 4. Route permission check
-  const currentPath = location.pathname;
-  const isDynamicRoute =
-    currentPath.startsWith("/app/distrito/") ||
-    currentPath.startsWith("/app/congregacao/");
+  // 5. Route permission check (skip for onboarding route and when profile is null during onboarding)
+  if (profile) {
+    const currentPath = location.pathname;
+    const isDynamicRoute =
+      currentPath.startsWith("/app/distrito/") ||
+      currentPath.startsWith("/app/congregacao/");
 
-  if (currentPath !== "/app" && !isDynamicRoute && !canViewRoute(currentPath)) {
-    return <Navigate to="/app" replace />;
+    if (currentPath !== "/app" && currentPath !== "/app/selecionar-acesso" && !isDynamicRoute && !canViewRoute(currentPath)) {
+      return <Navigate to="/app" replace />;
+    }
   }
 
   return <>{children}</>;
