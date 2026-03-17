@@ -93,7 +93,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (error) throw new Error(error.message);
 
     // Notify admin users about the new registration
-    await supabase.rpc("notify_admins_new_user", { user_name: nome }).catch(() => {});
+    try { await supabase.rpc("notify_admins_new_user", { user_name: nome }); } catch {}
 
     if (mounted.current) {
       setProfile(data);
