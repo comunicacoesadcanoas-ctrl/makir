@@ -275,6 +275,8 @@ export default function MapaGCs() {
       data_inicio: form.data_inicio || null,
       tipo_gc: form.tipo_gc,
       faixa_etaria: form.faixa_etaria,
+      distrito_id: form.distrito_id || null,
+      congregacao_id: form.congregacao_id || null,
     };
 
     let error;
