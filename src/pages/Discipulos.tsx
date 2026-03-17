@@ -30,7 +30,7 @@ interface DiscipuloWithVisitante {
     nome: string;
     telefone: string;
     cidade: string | null;
-    foto_url?: string | null;
+    
     aceitou_jesus: boolean;
     frequenta_igreja: boolean;
     quer_gc: boolean;
