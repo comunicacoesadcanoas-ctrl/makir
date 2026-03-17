@@ -39,8 +39,17 @@ export function usePermissions() {
 
   const canViewRoute = (route: string): boolean => {
     if (!userRole || !isApproved) return false;
-    if (route.startsWith("/app/distrito/")) return isAdmin;
-    if (route.startsWith("/app/congregacao/")) return isAdmin || isLiderDistrito;
+
+    // Distrito sub-routes: admin can see all, lider_distrito can see their own
+    if (route.startsWith("/app/distrito/")) {
+      return isAdmin || isLiderDistrito;
+    }
+
+    // Congregacao sub-routes: admin + lider_distrito + lider_congregacao (own)
+    if (route.startsWith("/app/congregacao/")) {
+      return isAdmin || isLiderDistrito || isLiderCongregacao;
+    }
+
     const allowed = routePermissions[route];
     if (!allowed) return false;
     return allowed.includes(userRole);
@@ -48,6 +57,12 @@ export function usePermissions() {
 
   const canEditRoute = (route: string): boolean => {
     if (!userRole || !isApproved) return false;
+
+    // Contextual routes inherit edit permissions
+    if (route.startsWith("/app/distrito/") || route.startsWith("/app/congregacao/")) {
+      return isAdmin || isLiderDistrito || isLiderCongregacao;
+    }
+
     const allowed = editPermissions[route];
     if (!allowed) return false;
     return allowed.includes(userRole);
