@@ -20,6 +20,7 @@ const Relatorios = lazy(() => import("./pages/Relatorios"));
 const MapaGCs = lazy(() => import("./pages/MapaGCs"));
 const Admin = lazy(() => import("./pages/Admin"));
 const Configuracoes = lazy(() => import("./pages/Configuracoes"));
+const SelecionarAcesso = lazy(() => import("./pages/SelecionarAcesso"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient({
