@@ -21,6 +21,7 @@ const MapaGCs = lazy(() => import("./pages/MapaGCs"));
 const Admin = lazy(() => import("./pages/Admin"));
 const Configuracoes = lazy(() => import("./pages/Configuracoes"));
 const SelecionarAcesso = lazy(() => import("./pages/SelecionarAcesso"));
+const AguardandoAprovacao = lazy(() => import("./pages/AguardandoAprovacao"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient({
@@ -58,6 +59,14 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <SelecionarAcesso />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/app/aguardando-aprovacao"
+                element={
+                  <ProtectedRoute>
+                    <AguardandoAprovacao />
                   </ProtectedRoute>
                 }
               />

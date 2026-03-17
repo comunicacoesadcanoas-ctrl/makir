@@ -76,12 +76,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const authUser = user ?? (await supabase.auth.getUser()).data.user;
     if (!authUser) throw new Error("Usuário não autenticado");
 
+    const nome = authUser.user_metadata?.full_name || authUser.email || "";
+
     const { data, error } = await supabase
       .from("users")
       .insert({
         id: authUser.id,
         email: authUser.email || "",
-        nome: authUser.user_metadata?.full_name || authUser.email || "",
+        nome,
         foto_url: authUser.user_metadata?.avatar_url || null,
         tipo_acesso: tipoAcesso,
       })
@@ -89,6 +91,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .single();
 
     if (error) throw new Error(error.message);
+
+    // Notify admin users about the new registration
+    try { await supabase.rpc("notify_admins_new_user", { user_name: nome }); } catch {}
+
     if (mounted.current) {
       setProfile(data);
       setNeedsOnboarding(false);

@@ -29,7 +29,16 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
     }
   }
 
-  // 4. Authenticated but no profile and not onboarding — show error
+  // 4. Profile exists but not approved — waiting screen
+  if (profile && profile.status !== "aprovado") {
+    const isWaitingRoute = location.pathname === "/app/aguardando-aprovacao";
+    if (!isWaitingRoute) {
+      return <Navigate to="/app/aguardando-aprovacao" replace />;
+    }
+    return <>{children}</>;
+  }
+
+  // 5. Authenticated but no profile and not onboarding — show error
   if (!profile && !needsOnboarding) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background px-4">
