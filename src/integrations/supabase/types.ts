@@ -599,6 +599,10 @@ export type Database = {
         Returns: Database["public"]["Enums"]["tipo_acesso_enum"]
       }
       is_admin: { Args: never; Returns: boolean }
+      notify_admins_new_user: {
+        Args: { user_name: string }
+        Returns: undefined
+      }
     }
     Enums: {
       estado_civil_enum: "solteiro" | "casado" | "divorciado"
