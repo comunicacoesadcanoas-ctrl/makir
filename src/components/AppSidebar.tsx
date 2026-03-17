@@ -182,7 +182,7 @@ export function AppSidebar() {
   const { mode, distrito, congregacao, loading } = useSidebarContext();
 
   return (
-    <aside className="hidden md:flex flex-col w-64 bg-sidebar min-h-screen">
+    <aside className="hidden md:flex flex-col w-64 bg-sidebar min-h-screen rounded-r-3xl">
       <div className="p-6">
         <img src={logoWhite} alt="Makir" className="h-10" />
       </div>
