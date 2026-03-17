@@ -1,18 +1,17 @@
 import { Outlet } from "react-router-dom";
 import { AppSidebar, BottomNav } from "@/components/AppSidebar";
 import { AppHeader } from "@/components/AppHeader";
-import DotGridBackground from "@/components/DotGridBackground";
 
 export default function AppLayout() {
   return (
-    <div className="flex min-h-screen w-full">
+    <div className="flex min-h-screen w-full bg-muted/40">
       <AppSidebar />
-      <DotGridBackground className="flex-1 flex flex-col min-h-screen bg-background">
+      <div className="flex-1 flex flex-col min-h-screen">
         <AppHeader />
-        <main className="flex-1 p-4 md:p-6 pb-20 md:pb-6 animate-fade-in">
+        <main className="flex-1 p-3 md:p-5 pb-20 md:pb-5 animate-fade-in">
           <Outlet />
         </main>
-      </DotGridBackground>
+      </div>
       <BottomNav />
     </div>
   );

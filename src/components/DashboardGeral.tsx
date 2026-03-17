@@ -1,11 +1,10 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
-  Users, BookOpen, MapPin, GraduationCap, TrendingUp, LayoutDashboard,
+  Users, BookOpen, MapPin, GraduationCap, TrendingUp,
   Printer, ChevronRight, Church, UserPlus, Plus
 } from "lucide-react";
 import { exportDashboardPDF } from "@/lib/export-utils";
@@ -16,7 +15,7 @@ import {
 } from "recharts";
 
 const COLORS = [
-  "hsl(215, 60%, 26%)", "hsl(207, 62%, 45%)", "hsl(152, 60%, 40%)",
+  "hsl(80, 65%, 50%)", "hsl(207, 62%, 45%)", "hsl(152, 60%, 40%)",
   "hsl(38, 92%, 50%)", "hsl(0, 84%, 60%)", "hsl(270, 50%, 50%)",
   "hsl(180, 50%, 40%)", "hsl(320, 50%, 50%)", "hsl(45, 80%, 50%)",
   "hsl(120, 40%, 45%)", "hsl(200, 60%, 50%)", "hsl(350, 60%, 50%)"
@@ -96,48 +95,61 @@ export default function DashboardGeral() {
   }
 
   return (
-    <div className="space-y-6" id="dashboard-content">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <LayoutDashboard className="h-6 w-6 text-primary" />
-          <h1 className="text-2xl font-bold text-foreground">Dashboard Geral</h1>
-        </div>
-        <div className="flex items-center gap-2 no-print">
-          <Button variant="outline" size="sm" onClick={() => setShowVisitanteDialog(true)} className="gap-1.5">
-            <UserPlus className="h-4 w-4" /> Visitante
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => setShowDiscipuloDialog(true)} className="gap-1.5">
-            <Plus className="h-4 w-4" /> Discípulo
-          </Button>
-          <Button variant="outline" size="sm" onClick={exportDashboardPDF} className="gap-1.5">
-            <Printer className="h-4 w-4" /> PDF
-          </Button>
-        </div>
+    <div className="space-y-4" id="dashboard-content">
+      {/* Action buttons */}
+      <div className="flex items-center gap-2 no-print">
+        <Button onClick={() => setShowVisitanteDialog(true)} size="sm" className="gap-1.5 rounded-2xl">
+          <UserPlus className="h-4 w-4" /> Visitante
+        </Button>
+        <Button variant="outline" onClick={() => setShowDiscipuloDialog(true)} size="sm" className="gap-1.5 rounded-2xl">
+          <Plus className="h-4 w-4" /> Discípulo
+        </Button>
+        <Button variant="ghost" size="sm" onClick={exportDashboardPDF} className="gap-1.5 rounded-2xl ml-auto">
+          <Printer className="h-4 w-4" /> PDF
+        </Button>
       </div>
 
-      {/* Global Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
-        <StatCard icon={Users} label="Visitantes" value={totalVisitantes} desc="total" />
-        <StatCard icon={BookOpen} label="Discípulos" value={totalDiscipulos} desc="ativos" />
-        <StatCard icon={GraduationCap} label="Formados" value={totalFormados} desc="13 lições" accent="success" />
-        <StatCard icon={MapPin} label="GCs Ativos" value={totalGcsAtivos} desc="funcionando" accent="success" />
-        <StatCard icon={TrendingUp} label="Membros GC" value={totalMembrosGC} desc="total" />
+      {/* Bento grid — stats + chart */}
+      <div className="grid grid-cols-2 lg:grid-cols-12 gap-3">
+        {/* Stat cards */}
+        <StatCard icon={Users} label="Visitantes" value={totalVisitantes} desc="total cadastrados" className="lg:col-span-3" />
+        <StatCard icon={BookOpen} label="Discípulos" value={totalDiscipulos} desc="em acompanhamento" className="lg:col-span-3" />
+        <StatCard icon={GraduationCap} label="Formados" value={totalFormados} desc="13 lições concluídas" accent="success" className="lg:col-span-2" />
+        <StatCard icon={MapPin} label="GCs Ativos" value={totalGcsAtivos} desc="em funcionamento" accent="success" className="lg:col-span-2" />
+        <StatCard icon={TrendingUp} label="Membros GC" value={totalMembrosGC} desc="participando" className="lg:col-span-2" />
       </div>
 
-      {/* Distribution chart */}
+      {/* Chart + quick actions row */}
       {chartData.length > 0 && (
-        <Card className="border-border">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Distribuição por Distrito</CardTitle>
-          </CardHeader>
-          <CardContent className="flex justify-center">
+        <Card className="rounded-3xl border-border/60 shadow-sm overflow-hidden">
+          <CardContent className="p-5">
+            <h3 className="text-sm font-semibold text-foreground mb-3">Distribuição por Distrito</h3>
             <ResponsiveContainer width="100%" height={220}>
               <PieChart>
-                <Pie data={chartData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80}
-                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}>
-                  {chartData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                <Pie
+                  data={chartData}
+                  dataKey="value"
+                  nameKey="name"
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={80}
+                  innerRadius={40}
+                  strokeWidth={3}
+                  stroke="hsl(var(--card))"
+                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                >
+                  {chartData.map((_, i) => (
+                    <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                  ))}
                 </Pie>
-                <Tooltip />
+                <Tooltip
+                  contentStyle={{
+                    borderRadius: "1rem",
+                    border: "1px solid hsl(var(--border))",
+                    background: "hsl(var(--card))",
+                    fontSize: "12px",
+                  }}
+                />
               </PieChart>
             </ResponsiveContainer>
           </CardContent>
@@ -151,31 +163,26 @@ export default function DashboardGeral() {
           {distritosData.map(d => (
             <Card
               key={d.id}
-              className="border-border hover:border-secondary/40 transition-colors cursor-pointer group"
+              className="rounded-3xl border-border/60 shadow-sm hover:shadow-md hover:border-accent/40 transition-all duration-200 cursor-pointer group"
               onClick={() => navigate(`/app/distrito/${d.id}`)}
             >
-              <CardContent className="py-4 px-4">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <Church className="h-4 w-4 text-primary" />
-                    <span className="font-semibold text-foreground">Distrito {d.numero}</span>
+              <CardContent className="p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2.5">
+                    <div className="h-9 w-9 rounded-2xl bg-primary/10 flex items-center justify-center">
+                      <Church className="h-4 w-4 text-primary" />
+                    </div>
+                    <div>
+                      <span className="font-semibold text-foreground text-sm">Distrito {d.numero}</span>
+                      <p className="text-xs text-muted-foreground">{d.nome}</p>
+                    </div>
                   </div>
-                  <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-secondary transition-colors" />
+                  <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-accent transition-colors" />
                 </div>
-                <p className="text-sm text-muted-foreground mb-3">{d.nome}</p>
-                <div className="grid grid-cols-3 gap-2 text-center">
-                  <div>
-                    <p className="text-lg font-bold text-foreground">{d.totalCongregacoes}</p>
-                    <p className="text-[10px] text-muted-foreground">Congregações</p>
-                  </div>
-                  <div>
-                    <p className="text-lg font-bold text-foreground">{d.totalVisitantes}</p>
-                    <p className="text-[10px] text-muted-foreground">Visitantes</p>
-                  </div>
-                  <div>
-                    <p className="text-lg font-bold text-foreground">{d.totalDiscipulos}</p>
-                    <p className="text-[10px] text-muted-foreground">Discípulos</p>
-                  </div>
+                <div className="grid grid-cols-3 gap-2">
+                  <MiniStat value={d.totalCongregacoes} label="Congregações" />
+                  <MiniStat value={d.totalVisitantes} label="Visitantes" />
+                  <MiniStat value={d.totalDiscipulos} label="Discípulos" />
                 </div>
               </CardContent>
             </Card>
@@ -189,19 +196,35 @@ export default function DashboardGeral() {
   );
 }
 
-function StatCard({ icon: Icon, label, value, desc, accent }: {
-  icon: React.ElementType; label: string; value: number | string; desc: string; accent?: string;
-}) {
-  const accentColor = accent === "success" ? "text-success" : accent === "warning" ? "text-warning" : accent === "destructive" ? "text-destructive" : "text-secondary";
+function MiniStat({ value, label }: { value: number; label: string }) {
   return (
-    <Card className="border-border">
-      <CardContent className="py-3 px-4">
-        <div className="flex items-center justify-between mb-1">
-          <span className="text-xs font-medium text-muted-foreground">{label}</span>
-          <Icon className={`h-4 w-4 ${accentColor}`} />
+    <div className="text-center bg-muted/50 rounded-2xl py-2.5 px-1">
+      <p className="text-lg font-bold text-foreground">{value}</p>
+      <p className="text-[10px] text-muted-foreground leading-tight">{label}</p>
+    </div>
+  );
+}
+
+function StatCard({ icon: Icon, label, value, desc, accent, className = "" }: {
+  icon: React.ElementType; label: string; value: number | string; desc: string; accent?: string; className?: string;
+}) {
+  const iconBg = accent === "success"
+    ? "bg-success/10 text-success"
+    : accent === "warning"
+      ? "bg-warning/10 text-warning"
+      : "bg-accent/10 text-accent";
+
+  return (
+    <Card className={`rounded-3xl border-border/60 shadow-sm ${className}`}>
+      <CardContent className="p-4">
+        <div className="flex items-start justify-between mb-3">
+          <div className={`h-9 w-9 rounded-2xl ${iconBg} flex items-center justify-center`}>
+            <Icon className="h-4 w-4" />
+          </div>
         </div>
         <p className="text-2xl font-bold text-foreground">{value}</p>
-        <p className="text-[10px] text-muted-foreground mt-0.5">{desc}</p>
+        <p className="text-xs font-medium text-muted-foreground mt-0.5">{label}</p>
+        <p className="text-[10px] text-muted-foreground/70">{desc}</p>
       </CardContent>
     </Card>
   );
