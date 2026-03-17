@@ -18,30 +18,42 @@ export function AppHeader() {
   const nome = profile?.nome || user?.user_metadata?.full_name || "Usuário";
   const foto = profile?.foto_url || user?.user_metadata?.avatar_url || "";
   const roleLabel = roleLabels[profile?.tipo_acesso || ""] || "Líder";
+  const firstName = nome.split(" ")[0];
 
   return (
-    <header className="h-16 border-b border-border bg-card flex items-center justify-between px-4 md:px-6">
+    <header className="flex items-center justify-between px-4 md:px-6 py-4">
+      {/* Mobile logo */}
       <div className="md:hidden">
         <img src={logoDark} alt="Makir" className="h-7" />
       </div>
-      <div className="hidden md:block" />
 
-      <div className="flex items-center gap-3">
+      {/* Greeting - desktop */}
+      <div className="hidden md:block">
+        <h2 className="text-lg font-bold text-foreground">Olá, {firstName}!</h2>
+        <p className="text-xs text-muted-foreground">Veja o que está acontecendo na sua rede hoje</p>
+      </div>
+
+      <div className="flex items-center gap-2">
         <NotificacoesDropdown />
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5 bg-card rounded-2xl pl-3 pr-1.5 py-1.5 border border-border shadow-sm">
           <div className="text-right hidden sm:block">
-            <p className="text-sm font-semibold text-foreground">{nome}</p>
-            <p className="text-[11px] text-muted-foreground">{roleLabel}</p>
+            <p className="text-sm font-semibold text-foreground leading-tight">{firstName}</p>
+            <p className="text-[10px] text-muted-foreground">{roleLabel}</p>
           </div>
-          <Avatar className="h-9 w-9 ring-2 ring-accent/30">
+          <Avatar className="h-8 w-8 ring-2 ring-accent/20">
             <AvatarImage src={foto} alt={nome} />
-            <AvatarFallback className="bg-accent text-accent-foreground text-sm font-bold">
+            <AvatarFallback className="bg-accent text-accent-foreground text-xs font-bold">
               {nome.charAt(0).toUpperCase()}
             </AvatarFallback>
           </Avatar>
-          <Button variant="ghost" size="icon" onClick={async () => { await signOut(); navigate("/login", { replace: true }); }} className="text-muted-foreground hover:text-foreground">
-            <LogOut className="h-4 w-4" />
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={async () => { await signOut(); navigate("/login", { replace: true }); }}
+            className="text-muted-foreground hover:text-foreground h-8 w-8 rounded-xl"
+          >
+            <LogOut className="h-3.5 w-3.5" />
           </Button>
         </div>
       </div>

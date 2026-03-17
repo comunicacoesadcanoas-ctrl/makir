@@ -14,14 +14,18 @@ function SidebarLink({ item, isActive, badgeCount }: { item: NavItem; isActive: 
   return (
     <NavLink
       to={item.url}
-      className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
+      className={`flex items-center gap-3 px-3 py-2.5 rounded-2xl text-sm font-medium transition-all duration-200 ${
         isActive
           ? "bg-sidebar-accent text-sidebar-primary"
           : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
       }`}
       activeClassName=""
     >
-      <item.icon className="h-4.5 w-4.5" />
+      <div className={`h-8 w-8 rounded-xl flex items-center justify-center shrink-0 ${
+        isActive ? "bg-sidebar-primary text-sidebar-primary-foreground" : "bg-sidebar-accent/50"
+      }`}>
+        <item.icon className="h-4 w-4" />
+      </div>
       <span className="flex-1">{item.title}</span>
       {badgeCount > 0 && (
         <span className="bg-secondary text-secondary-foreground text-[10px] font-bold rounded-full h-5 min-w-[20px] flex items-center justify-center px-1.5">
@@ -178,7 +182,7 @@ export function AppSidebar() {
   const { mode, distrito, congregacao, loading } = useSidebarContext();
 
   return (
-    <aside className="hidden md:flex flex-col w-64 bg-sidebar min-h-screen">
+    <aside className="hidden md:flex flex-col w-64 bg-sidebar min-h-screen rounded-r-3xl">
       <div className="p-6">
         <img src={logoWhite} alt="Makir" className="h-10" />
       </div>
