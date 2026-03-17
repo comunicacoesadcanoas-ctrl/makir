@@ -21,8 +21,16 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
     return <Navigate to="/login" state={{ from: location.pathname }} replace />;
   }
 
-  // 3. Authenticated but no profile (fetch failed) — show error, don't spin forever
-  if (!profile) {
+  // 3. Needs onboarding — redirect to role selection
+  if (needsOnboarding) {
+    const isOnboardingRoute = location.pathname === "/app/selecionar-acesso";
+    if (!isOnboardingRoute) {
+      return <Navigate to="/app/selecionar-acesso" replace />;
+    }
+  }
+
+  // 4. Authenticated but no profile and not onboarding — show error
+  if (!profile && !needsOnboarding) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background px-4">
         <div className="text-center space-y-4 max-w-sm">
