@@ -62,6 +62,7 @@ const App = () => (
                 }
               >
                 <Route index element={<DefaultRedirect />} />
+                <Route path="selecionar-acesso" element={<SelecionarAcesso />} />
                 <Route path="dashboard" element={<Dashboard />} />
                 <Route path="distrito/:distritoId" element={<DistritoPage />} />
                 <Route path="congregacao/:congId" element={<CongregacaoPage />} />
