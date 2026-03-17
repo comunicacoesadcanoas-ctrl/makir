@@ -70,11 +70,12 @@ export default function DashboardGeral() {
         numero: d.numero,
         nome: d.nome,
         totalCongregacoes: congs.length,
+        totalGCs: gcs.filter(g => g.congregacao_id && congIds.has(g.congregacao_id)).length,
         totalVisitantes: visitantes.filter(v => congIds.has(v.congregacao_id)).length,
         totalDiscipulos: discipulos.filter(di => congIds.has(di.congregacao_id)).length,
       };
     });
-  }, [distritos, congregacoes, visitantes, discipulos]);
+  }, [distritos, congregacoes, visitantes, discipulos, gcs]);
 
   const totalVisitantes = visitantes.length;
   const totalDiscipulos = discipulos.length;
