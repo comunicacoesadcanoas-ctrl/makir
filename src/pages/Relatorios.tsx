@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePermissions } from "@/hooks/usePermissions";
+import { useRouteContext } from "@/hooks/useRouteContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -51,6 +52,7 @@ const statusSessaoConfig: Record<StatusSessao, { label: string; icon: React.Reac
 export default function Relatorios() {
   const { user } = useAuth();
   const { userRole } = usePermissions();
+  const { congIds, isContextual } = useRouteContext();
   const [showForm, setShowForm] = useState(false);
   const [discipulos, setDiscipulos] = useState<DiscipuloOption[]>([]);
   const [selectedDiscipulo, setSelectedDiscipulo] = useState("");
@@ -69,10 +71,19 @@ export default function Relatorios() {
   const [page, setPage] = useState(1);
 
   const fetchDiscipulos = useCallback(async () => {
-    const { data, error } = await supabase
+    let query = supabase
       .from("discipulos")
-      .select("id, licoes_concluidas, progresso_percentual, visitantes(nome)")
+      .select("id, licoes_concluidas, progresso_percentual, congregacao_id, visitantes(nome)")
       .order("data_inicio", { ascending: false });
+
+    if (congIds && congIds.length > 0) {
+      query = query.in("congregacao_id", congIds);
+    } else if (congIds && congIds.length === 0) {
+      setDiscipulos([]);
+      return;
+    }
+
+    const { data, error } = await query;
     if (!error && data) {
       setDiscipulos(data.map((d: any) => ({
         id: d.id,
@@ -81,16 +92,29 @@ export default function Relatorios() {
         progresso_percentual: d.progresso_percentual,
       })));
     }
-  }, []);
+  }, [congIds]);
 
   const fetchRelatorios = useCallback(async () => {
     setLoading(true);
-    const { data, error } = await supabase
+
+    // Get discipulo IDs to filter relatorios
+    const discipuloIds = discipulos.map(d => d.id);
+
+    let query = supabase
       .from("relatorios")
       .select("*")
       .order("data_hora", { ascending: false });
+
+    if (isContextual && discipuloIds.length > 0) {
+      query = query.in("discipulo_id", discipuloIds);
+    } else if (isContextual && discipuloIds.length === 0) {
+      setRelatorios([]);
+      setLoading(false);
+      return;
+    }
+
+    const { data, error } = await query;
     if (!error && data) {
-      // Enrich with discipulo names
       const enriched = data.map((r: any) => {
         const disc = discipulos.find(d => d.id === r.discipulo_id);
         return { ...r, visitante_nome: disc?.visitante_nome || "—" };
@@ -98,7 +122,7 @@ export default function Relatorios() {
       setRelatorios(enriched);
     }
     setLoading(false);
-  }, [discipulos]);
+  }, [discipulos, isContextual]);
 
   const fetchLicoes = useCallback(async (discipuloId: string) => {
     const { data } = await supabase
@@ -110,7 +134,7 @@ export default function Relatorios() {
   }, []);
 
   useEffect(() => { fetchDiscipulos(); }, [fetchDiscipulos]);
-  useEffect(() => { if (discipulos.length > 0) fetchRelatorios(); }, [discipulos, fetchRelatorios]);
+  useEffect(() => { if (discipulos.length > 0 || isContextual) fetchRelatorios(); }, [discipulos, fetchRelatorios, isContextual]);
   useEffect(() => {
     if (selectedDiscipulo) {
       fetchLicoes(selectedDiscipulo);
@@ -125,7 +149,6 @@ export default function Relatorios() {
     }
     setSaving(true);
     try {
-      // Check if this lesson was already reported
       const { data: existing } = await supabase
         .from("relatorios")
         .select("id")
@@ -139,7 +162,6 @@ export default function Relatorios() {
         return;
       }
 
-      // Insert relatorio
       const { error: insertError } = await supabase.from("relatorios").insert({
         discipulo_id: selectedDiscipulo,
         discipulador_id: user!.id,
@@ -150,7 +172,6 @@ export default function Relatorios() {
       });
       if (insertError) throw insertError;
 
-      // Mark licao as concluida if present
       if (statusSessao === "presente") {
         await supabase
           .from("licoes")
@@ -161,7 +182,6 @@ export default function Relatorios() {
 
       toast.success("Relatório salvo com sucesso!");
 
-      // Check if lesson 13 is now complete
       if (statusSessao === "presente" && selectedLicao === 13) {
         const disc = discipulos.find(d => d.id === selectedDiscipulo);
         setFormadoNome(disc?.visitante_nome || "Discípulo");
@@ -169,7 +189,6 @@ export default function Relatorios() {
         confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
       }
 
-      // Reset form
       setShowForm(false);
       setSelectedDiscipulo("");
       setSelectedLicao(null);
@@ -192,7 +211,6 @@ export default function Relatorios() {
   const paginatedRelatorios = paginate(page);
   useEffect(() => { setPage(1); }, [filterDiscipulo]);
 
-  // Progress view for selected discipulo
   const progressDiscipulo = filterDiscipulo !== "all"
     ? discipulos.find(d => d.id === filterDiscipulo)
     : null;
@@ -230,7 +248,6 @@ export default function Relatorios() {
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            {/* Discipulo Select */}
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-foreground">Discípulo *</label>
               <Select value={selectedDiscipulo} onValueChange={setSelectedDiscipulo}>
@@ -243,7 +260,6 @@ export default function Relatorios() {
               </Select>
             </div>
 
-            {/* Licao Selector */}
             {selectedDiscipulo && (
               <div className="space-y-1.5">
                 <label className="text-sm font-medium text-foreground">Lição *</label>
@@ -276,7 +292,6 @@ export default function Relatorios() {
               </div>
             )}
 
-            {/* Status Sessao */}
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-foreground">Status da Sessão *</label>
               <div className="flex gap-2">
@@ -300,7 +315,6 @@ export default function Relatorios() {
               </div>
             </div>
 
-            {/* Observacoes */}
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-foreground">Observações *</label>
               <Textarea
@@ -311,7 +325,6 @@ export default function Relatorios() {
               />
             </div>
 
-            {/* Data/Hora */}
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-foreground">Data e Hora</label>
               <Input

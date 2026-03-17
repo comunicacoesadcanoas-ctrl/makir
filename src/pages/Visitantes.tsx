@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useCongregacoes } from "@/hooks/useCongregacoes";
+import { useRouteContext } from "@/hooks/useRouteContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -32,6 +33,7 @@ export default function Visitantes() {
   const { user } = useAuth();
   const { canEditRoute, userRole, isAdmin } = usePermissions();
   const canEdit = canEditRoute("/app/visitantes");
+  const { congIds, isContextual } = useRouteContext();
 
   const [visitantes, setVisitantes] = useState<Visitante[]>([]);
   const [loading, setLoading] = useState(true);
@@ -48,11 +50,23 @@ export default function Visitantes() {
 
   const fetchVisitantes = useCallback(async () => {
     setLoading(true);
-    const { data, error } = await supabase
+    let query = supabase
       .from("visitantes")
       .select("*")
       .neq("status_cor", "verde")
       .order("criado_em", { ascending: false });
+
+    // Apply context filter
+    if (congIds && congIds.length > 0) {
+      query = query.in("congregacao_id", congIds);
+    } else if (congIds && congIds.length === 0) {
+      // District has no congregations, show nothing
+      setVisitantes([]);
+      setLoading(false);
+      return;
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       toast.error("Erro ao carregar visitantes");
@@ -61,7 +75,7 @@ export default function Visitantes() {
       setVisitantes(data || []);
     }
     setLoading(false);
-  }, []);
+  }, [congIds]);
 
   useEffect(() => { fetchVisitantes(); }, [fetchVisitantes]);
 
@@ -118,7 +132,7 @@ export default function Visitantes() {
           <FilterButton active={statusFilter === "vermelho"} onClick={() => setStatusFilter("vermelho")} label="🔴" />
           <FilterButton active={statusFilter === "amarelo"} onClick={() => setStatusFilter("amarelo")} label="🟡" />
         </div>
-        {(isAdmin || userRole === "lider_distrito") && congregacoes.length > 0 && (
+        {!isContextual && (isAdmin || userRole === "lider_distrito") && congregacoes.length > 0 && (
           <Select value={congregacaoFilter} onValueChange={setCongregacaoFilter}>
             <SelectTrigger className="w-[180px]"><SelectValue placeholder="Congregação" /></SelectTrigger>
             <SelectContent>

@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useCongregacoes } from "@/hooks/useCongregacoes";
+import { useRouteContext } from "@/hooks/useRouteContext";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -26,11 +27,11 @@ interface DiscipuloWithVisitante {
   data_inicio: string;
   status_cor: string;
   ultima_atividade: string | null;
+  congregacao_id: string | null;
   visitantes: {
     nome: string;
     telefone: string;
     cidade: string | null;
-    
     aceitou_jesus: boolean;
     frequenta_igreja: boolean;
     quer_gc: boolean;
@@ -53,6 +54,7 @@ const statusColors: Record<string, { bg: string; ring: string; label: string }> 
 export default function Discipulos() {
   const { userRole, isAdmin } = usePermissions();
   const { congregacoes, distritos } = useCongregacoes();
+  const { congIds, isContextual } = useRouteContext();
   const [discipulos, setDiscipulos] = useState<DiscipuloWithVisitante[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -65,10 +67,20 @@ export default function Discipulos() {
 
   const fetchDiscipulos = useCallback(async () => {
     setLoading(true);
-    const { data, error } = await supabase
+    let query = supabase
       .from("discipulos")
       .select("*, visitantes(nome, telefone, cidade, aceitou_jesus, frequenta_igreja, quer_gc, quer_discipulado, estado_civil, sexo, endereco, observacoes, ano, criado_em, congregacao_id)")
       .order("data_inicio", { ascending: false });
+
+    if (congIds && congIds.length > 0) {
+      query = query.in("congregacao_id", congIds);
+    } else if (congIds && congIds.length === 0) {
+      setDiscipulos([]);
+      setLoading(false);
+      return;
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       toast.error("Erro ao carregar discípulos");
@@ -77,14 +89,14 @@ export default function Discipulos() {
       setDiscipulos((data as unknown as DiscipuloWithVisitante[]) || []);
     }
     setLoading(false);
-  }, []);
+  }, [congIds]);
 
   useEffect(() => { fetchDiscipulos(); }, [fetchDiscipulos]);
 
   const filtered = discipulos.filter((d) => {
     const nome = d.visitantes?.nome || "";
     const matchSearch = !search || nome.toLowerCase().includes(search.toLowerCase());
-    const matchCong = congregacaoFilter === "all" || (d as any).congregacao_id === congregacaoFilter;
+    const matchCong = congregacaoFilter === "all" || d.congregacao_id === congregacaoFilter;
     return matchSearch && matchCong;
   });
 
@@ -118,7 +130,7 @@ export default function Discipulos() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input placeholder="Buscar por nome..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
         </div>
-        {(isAdmin || userRole === "lider_distrito") && congregacoes.length > 0 && (
+        {!isContextual && (isAdmin || userRole === "lider_distrito") && congregacoes.length > 0 && (
           <Select value={congregacaoFilter} onValueChange={setCongregacaoFilter}>
             <SelectTrigger className="w-[180px]"><SelectValue placeholder="Congregação" /></SelectTrigger>
             <SelectContent>
