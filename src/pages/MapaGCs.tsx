@@ -45,6 +45,8 @@ interface GC {
   data_inicio: string | null;
   tipo_gc: TipoGC | null;
   faixa_etaria: FaixaEtaria | null;
+  distrito_id: string | null;
+  congregacao_id: string | null;
 }
 
 const diasSemana = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"];
