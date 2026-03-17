@@ -109,6 +109,8 @@ const emptyForm = {
   data_inicio: new Date().toISOString().slice(0, 10),
   formLat: null as number | null,
   formLng: null as number | null,
+  distrito_id: "" as string,
+  congregacao_id: "" as string,
 };
 
 const defaultCenter: [number, number] = [-51.1833, -29.9167]; // [lng, lat] Canoas, RS
