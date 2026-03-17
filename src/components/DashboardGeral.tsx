@@ -49,7 +49,7 @@ export default function DashboardGeral() {
       supabase.from("congregacoes").select("*"),
       supabase.from("visitantes").select("id, status_cor, congregacao_id, criado_em"),
       supabase.from("discipulos").select("id, status_cor, congregacao_id, licoes_concluidas"),
-      supabase.from("grupos_crescimento").select("id, status_gc, total_membros"),
+      supabase.from("grupos_crescimento").select("id, status_gc, total_membros, congregacao_id"),
     ]);
     setDistritos(dRes.data || []);
     setCongregacoes(cRes.data || []);
