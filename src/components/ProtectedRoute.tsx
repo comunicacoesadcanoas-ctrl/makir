@@ -57,15 +57,19 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
     );
   }
 
-  // 5. Route permission check (skip for onboarding route and when profile is null during onboarding)
+  // 5. Route permission check (skip for onboarding, dynamic routes, and aguardando-aprovacao)
   if (profile) {
     const currentPath = location.pathname;
     const isDynamicRoute =
       currentPath.startsWith("/app/distrito/") ||
       currentPath.startsWith("/app/congregacao/");
+    const isSpecialRoute =
+      currentPath === "/app" ||
+      currentPath === "/app/selecionar-acesso" ||
+      currentPath === "/app/aguardando-aprovacao";
 
-    if (currentPath !== "/app" && currentPath !== "/app/selecionar-acesso" && !isDynamicRoute && !canViewRoute(currentPath)) {
-      return <Navigate to="/app" replace />;
+    if (!isSpecialRoute && !isDynamicRoute && !canViewRoute(currentPath)) {
+      return <Navigate to="/app/dashboard" replace />;
     }
   }
 

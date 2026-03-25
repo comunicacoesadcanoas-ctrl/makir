@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Users, BookOpen, BarChart3, MapPin, LayoutDashboard, ShieldCheck, Settings, ChevronRight, Church, ArrowLeft, Eye } from "lucide-react";
+import { Users, BookOpen, BarChart3, MapPin, LayoutDashboard, ShieldCheck, Settings, ChevronRight, Church, ArrowLeft, Eye, UserCog } from "lucide-react";
 import logoWhite from "@/assets/logo-makir-white.svg";
 import { NavLink } from "@/components/NavLink";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -67,6 +67,7 @@ function GlobalSidebar({ badges }: { badges: ReturnType<typeof useBadgeCounts> }
   navItems.push({ title: "Dashboard", url: "/app/dashboard", icon: LayoutDashboard, badgeKey: null });
   if (canViewRoute("/app/visitantes")) navItems.push({ title: "Visitantes", url: "/app/visitantes", icon: Users, badgeKey: "visitantesAmarelos" });
   if (canViewRoute("/app/discipulos")) navItems.push({ title: "Discípulos", url: "/app/discipulos", icon: BookOpen, badgeKey: "discipulosVermelhos" });
+  if (canViewRoute("/app/discipuladores")) navItems.push({ title: "Discipuladores", url: "/app/discipuladores", icon: UserCog, badgeKey: null });
   if (canViewRoute("/app/relatorios")) navItems.push({ title: "Relatórios", url: "/app/relatorios", icon: BarChart3, badgeKey: null });
   if (canViewRoute("/app/mapa-gcs")) navItems.push({ title: "Mapa de GCs", url: "/app/mapa-gcs", icon: MapPin, badgeKey: null });
   if (canViewRoute("/app/admin")) navItems.push({ title: "Admin", url: "/app/admin", icon: ShieldCheck, badgeKey: "pendentesAdmin" });
