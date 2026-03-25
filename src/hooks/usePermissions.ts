@@ -10,7 +10,7 @@ const routePermissions: Record<string, TipoAcesso[]> = {
   "/app/dashboard": allRoles,
   "/app/visitantes": allRoles,
   "/app/discipulos": allRoles,
-  "/app/discipuladores": allRoles,
+  "/app/discipuladores": ["rede", "lider_distrito"],
   "/app/relatorios": allRoles,
   "/app/mapa-gcs": ["rede"],
   "/app/admin": ["rede"],
