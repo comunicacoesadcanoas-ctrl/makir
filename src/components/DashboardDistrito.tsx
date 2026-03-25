@@ -83,7 +83,12 @@ export default function DashboardDistrito({ distritoId: propDistritoId }: Props)
 
   if (!distrito) {
     return (
-      <div className="text-center py-20 text-muted-foreground">Distrito não encontrado.</div>
+      <div className="text-center py-20 space-y-3">
+        <p className="text-muted-foreground">Distrito não encontrado.</p>
+        <Button variant="outline" onClick={() => navigate("/app/dashboard")} className="rounded-2xl">
+          Voltar ao Dashboard
+        </Button>
+      </div>
     );
   }
 

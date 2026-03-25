@@ -81,7 +81,14 @@ export default function DashboardCongregacao({ congregacaoId: propCongId }: Prop
   }
 
   if (!congregacao) {
-    return <div className="text-center py-20 text-muted-foreground">Congregação não encontrada.</div>;
+    return (
+      <div className="text-center py-20 space-y-3">
+        <p className="text-muted-foreground">Congregação não encontrada.</p>
+        <Button variant="outline" onClick={() => navigate("/app/dashboard")} className="rounded-2xl">
+          Voltar ao Dashboard
+        </Button>
+      </div>
+    );
   }
 
   return (
