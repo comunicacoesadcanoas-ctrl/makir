@@ -89,8 +89,8 @@ export type Database = {
         Row: {
           congregacao_id: string | null
           data_inicio: string
-          discipulador_id: string
-          discipulador_nome: string
+          discipulador_id: string | null
+          discipulador_nome: string | null
           id: string
           licoes_concluidas: number
           progresso_percentual: number
@@ -101,8 +101,8 @@ export type Database = {
         Insert: {
           congregacao_id?: string | null
           data_inicio?: string
-          discipulador_id: string
-          discipulador_nome: string
+          discipulador_id?: string | null
+          discipulador_nome?: string | null
           id?: string
           licoes_concluidas?: number
           progresso_percentual?: number
@@ -113,8 +113,8 @@ export type Database = {
         Update: {
           congregacao_id?: string | null
           data_inicio?: string
-          discipulador_id?: string
-          discipulador_nome?: string
+          discipulador_id?: string | null
+          discipulador_nome?: string | null
           id?: string
           licoes_concluidas?: number
           progresso_percentual?: number
@@ -168,7 +168,7 @@ export type Database = {
           mes_referencia: string
           observacoes: string | null
           presentes: number
-          registrado_por: string
+          registrado_por: string | null
         }
         Insert: {
           criado_em?: string
@@ -177,7 +177,7 @@ export type Database = {
           mes_referencia: string
           observacoes?: string | null
           presentes?: number
-          registrado_por: string
+          registrado_por?: string | null
         }
         Update: {
           criado_em?: string
@@ -186,7 +186,7 @@ export type Database = {
           mes_referencia?: string
           observacoes?: string | null
           presentes?: number
-          registrado_por?: string
+          registrado_por?: string | null
         }
         Relationships: [
           {
@@ -405,31 +405,31 @@ export type Database = {
         Row: {
           criado_em: string
           data_hora: string
-          discipulador_id: string
+          discipulador_id: string | null
           discipulo_id: string
           id: string
           licao_numero: number
-          observacoes: string
+          observacoes: string | null
           status_sessao: Database["public"]["Enums"]["status_sessao_enum"]
         }
         Insert: {
           criado_em?: string
           data_hora?: string
-          discipulador_id: string
+          discipulador_id?: string | null
           discipulo_id: string
           id?: string
           licao_numero: number
-          observacoes: string
+          observacoes?: string | null
           status_sessao?: Database["public"]["Enums"]["status_sessao_enum"]
         }
         Update: {
           criado_em?: string
           data_hora?: string
-          discipulador_id?: string
+          discipulador_id?: string | null
           discipulo_id?: string
           id?: string
           licao_numero?: number
-          observacoes?: string
+          observacoes?: string | null
           status_sessao?: Database["public"]["Enums"]["status_sessao_enum"]
         }
         Relationships: [
@@ -534,8 +534,8 @@ export type Database = {
           aceitou_jesus: boolean
           ano: string | null
           assumido_por: string | null
-          cadastrado_por: string
-          cadastrado_por_nome: string
+          cadastrado_por: string | null
+          cadastrado_por_nome: string | null
           cidade: string | null
           congregacao_id: string | null
           criado_em: string
@@ -555,8 +555,8 @@ export type Database = {
           aceitou_jesus?: boolean
           ano?: string | null
           assumido_por?: string | null
-          cadastrado_por: string
-          cadastrado_por_nome: string
+          cadastrado_por?: string | null
+          cadastrado_por_nome?: string | null
           cidade?: string | null
           congregacao_id?: string | null
           criado_em?: string
@@ -576,8 +576,8 @@ export type Database = {
           aceitou_jesus?: boolean
           ano?: string | null
           assumido_por?: string | null
-          cadastrado_por?: string
-          cadastrado_por_nome?: string
+          cadastrado_por?: string | null
+          cadastrado_por_nome?: string | null
           cidade?: string | null
           congregacao_id?: string | null
           criado_em?: string
