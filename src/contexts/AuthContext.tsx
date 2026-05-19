@@ -1,4 +1,5 @@
-import { createContext, useContext, ReactNode } from "react";
+import { createContext, useContext, useEffect, ReactNode } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import type { Tables, Database } from "@/integrations/supabase/types";
 
 type UserProfile = Tables<"users">;
@@ -19,9 +20,6 @@ const guestProfile: UserProfile = {
   criado_em: new Date().toISOString(),
 };
 
-// Minimal user-shape compatible with existing call sites that read `.id` /
-// `.email` / `.user_metadata`. Cast as any to satisfy Supabase's User type
-// without dragging the whole auth dependency into a guest-only app.
 const guestUser = {
   id: GUEST_ID,
   email: "guest@makir.app",
@@ -47,13 +45,15 @@ interface AuthContextType {
 const noop = async () => {};
 
 const value: AuthContextType = {
-  session: { user: guestUser }, // truthy so Login.tsx redirects away
+  session: { user: guestUser },
   user: guestUser,
   profile: guestProfile,
   loading: false,
   ready: true,
   needsOnboarding: false,
-  signOut: noop,
+  signOut: async () => {
+    try { await supabase.auth.signOut(); } catch {}
+  },
   refreshProfile: noop,
   createProfile: noop,
 };
@@ -61,6 +61,15 @@ const value: AuthContextType = {
 const AuthContext = createContext<AuthContextType>(value);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  // Clear any stale Supabase session left over from the previous auth flow.
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      if (data.session) {
+        supabase.auth.signOut().catch(() => {});
+      }
+    });
+  }, []);
+
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 

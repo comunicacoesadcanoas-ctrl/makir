@@ -8,6 +8,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import AppLayout from "./layouts/AppLayout";
 import { DefaultRedirect } from "./components/DefaultRedirect";
+import ScrollToTop from "./components/ScrollToTop";
 
 const Login = lazy(() => import("./pages/Login"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
@@ -20,8 +21,6 @@ const Relatorios = lazy(() => import("./pages/Relatorios"));
 const MapaGCs = lazy(() => import("./pages/MapaGCs"));
 const Admin = lazy(() => import("./pages/Admin"));
 const Configuracoes = lazy(() => import("./pages/Configuracoes"));
-const SelecionarAcesso = lazy(() => import("./pages/SelecionarAcesso"));
-const AguardandoAprovacao = lazy(() => import("./pages/AguardandoAprovacao"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient({
@@ -46,6 +45,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        <ScrollToTop />
         <AuthProvider>
           <Suspense fallback={<PageLoader />}>
             <Routes>
@@ -53,23 +53,7 @@ const App = () => (
               <Route path="/" element={<Navigate to="/login" replace />} />
               <Route path="/login" element={<Login />} />
 
-              {/* Onboarding — protected but outside AppLayout */}
-              <Route
-                path="/app/selecionar-acesso"
-                element={
-                  <ProtectedRoute>
-                    <SelecionarAcesso />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/app/aguardando-aprovacao"
-                element={
-                  <ProtectedRoute>
-                    <AguardandoAprovacao />
-                  </ProtectedRoute>
-                }
-              />
+
 
               {/* Protected app shell */}
               <Route
