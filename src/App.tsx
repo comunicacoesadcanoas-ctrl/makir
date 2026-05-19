@@ -8,6 +8,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import AppLayout from "./layouts/AppLayout";
 import { DefaultRedirect } from "./components/DefaultRedirect";
+import ScrollToTop from "./components/ScrollToTop";
 
 const Login = lazy(() => import("./pages/Login"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
@@ -46,6 +47,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        <ScrollToTop />
         <AuthProvider>
           <Suspense fallback={<PageLoader />}>
             <Routes>
