@@ -1,8 +1,5 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { LogOut } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
 import { NotificacoesDropdown } from "@/components/NotificacoesDropdown";
 import logoDark from "@/assets/logo-makir.svg";
 
@@ -13,8 +10,7 @@ const roleLabels: Record<string, string> = {
 };
 
 export function AppHeader() {
-  const navigate = useNavigate();
-  const { profile, user, signOut } = useAuth();
+  const { profile, user } = useAuth();
   const nome = profile?.nome || user?.user_metadata?.full_name || "Usuário";
   const foto = profile?.foto_url || user?.user_metadata?.avatar_url || "";
   const roleLabel = roleLabels[profile?.tipo_acesso || ""] || "Líder";
@@ -47,14 +43,6 @@ export function AppHeader() {
               {nome.charAt(0).toUpperCase()}
             </AvatarFallback>
           </Avatar>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={async () => { await signOut(); navigate("/login", { replace: true }); }}
-            className="text-muted-foreground hover:text-foreground h-8 w-8 rounded-xl"
-          >
-            <LogOut className="h-3.5 w-3.5" />
-          </Button>
         </div>
       </div>
     </header>

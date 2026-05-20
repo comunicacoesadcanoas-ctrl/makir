@@ -50,8 +50,8 @@ const App = () => (
           <Suspense fallback={<PageLoader />}>
             <Routes>
               {/* Public routes */}
-              <Route path="/" element={<Navigate to="/login" replace />} />
-              <Route path="/login" element={<Login />} />
+              <Route path="/" element={<Navigate to="/app/dashboard" replace />} />
+              <Route path="/login" element={<Navigate to="/app/dashboard" replace />} />
 
 
 
