@@ -10,18 +10,8 @@ export default defineConfig(async ({ mode }) => {
     try { tagger = await (import("lovable-tagger" as any) as any).then((m: any) => m.componentTagger()); } catch {}
   }
 
-  return {
-    server: {
-      host: "::",
-      port: 8080,
-      hmr: {
-        overlay: false,
-      },
-    },
-    plugins: [
-      react(),
-      tagger,
-      VitePWA({
+  const pwaPlugin = mode === "production"
+    ? VitePWA({
         registerType: "autoUpdate",
         workbox: {
           globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
@@ -52,7 +42,21 @@ export default defineConfig(async ({ mode }) => {
             { src: "/pwa-512x512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
           ],
         },
-      }),
+      })
+    : null;
+
+  return {
+    server: {
+      host: "::",
+      port: 8080,
+      hmr: {
+        overlay: false,
+      },
+    },
+    plugins: [
+      react(),
+      tagger,
+      pwaPlugin,
     ].filter(Boolean),
     resolve: {
       alias: {
