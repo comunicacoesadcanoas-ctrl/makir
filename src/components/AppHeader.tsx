@@ -43,14 +43,6 @@ export function AppHeader() {
               {nome.charAt(0).toUpperCase()}
             </AvatarFallback>
           </Avatar>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={async () => { await signOut(); navigate("/login", { replace: true }); }}
-            className="text-muted-foreground hover:text-foreground h-8 w-8 rounded-xl"
-          >
-            <LogOut className="h-3.5 w-3.5" />
-          </Button>
         </div>
       </div>
     </header>
